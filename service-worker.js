@@ -1,38 +1,6 @@
-const CACHE='routinen-cache-v27';
-const ASSETS=[
-  './',
-  './index.html',
-  './manifest.webmanifest',
-  './icons/icon.svg',
-  './styles/app.css?v=27',
-  './styles/v27-task-buttons.css?v=27',
-  './src/version.js',
-  './src/emoji.js',
-  './src/pull-refresh.js',
-  './src/app.js?v=27',
-  './src/app-v23.js?v=27'
-];
-self.addEventListener('install',event=>{
-  self.skipWaiting();
-  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));
-});
-self.addEventListener('activate',event=>{
-  event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
-});
-self.addEventListener('fetch',event=>{
-  const request=event.request;
-  if(request.mode==='navigate'){
-    event.respondWith(fetch(request,{cache:'no-store'}).then(response=>{
-      const copy=response.clone();
-      caches.open(CACHE).then(cache=>cache.put('./index.html',copy));
-      return response;
-    }).catch(()=>caches.match('./index.html')));
-    return;
-  }
-  event.respondWith(caches.match(request).then(cached=>cached||fetch(request).then(response=>{
-    const copy=response.clone();
-    caches.open(CACHE).then(cache=>cache.put(request,copy));
-    return response;
-  })));
-});
-self.addEventListener('message',event=>{if(event.data&&event.data.type==='SKIP_WAITING')self.skipWaiting()});
+const CACHE='routinen-cache-v28';
+const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/icon.svg','./styles/app.css?v=28','./styles/v27-task-buttons.css?v=28','./src/version.js','./src/emoji-map.js','./src/emoji.js','./src/pull-refresh.js','./src/app.js?v=28','./src/app-v23.js?v=28'];
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener('fetch',e=>{const r=e.request;if(r.mode==='navigate'){e.respondWith(fetch(r,{cache:'no-store'}).then(x=>{const y=x.clone();caches.open(CACHE).then(c=>c.put('./index.html',y));return x}).catch(()=>caches.match('./index.html')));return}e.respondWith(caches.match(r).then(c=>c||fetch(r).then(x=>{const y=x.clone();caches.open(CACHE).then(ca=>ca.put(r,y));return x})))});
+self.addEventListener('message',e=>{if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting()});
