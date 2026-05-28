@@ -5,7 +5,6 @@
   const today = () => new Date().toLocaleDateString('sv');
   const td = s => new Date(s + 'T00:00:00');
   const add = (s,n) => { const d = td(s || today()); d.setDate(d.getDate()+n); return d.toLocaleDateString('sv'); };
-  const wd = s => (td(s).getDay()+6)%7;
   const weekEnd = () => { const d = td(today()); const x = (d.getDay()+6)%7; d.setDate(d.getDate()+6-x); return d.toLocaleDateString('sv'); };
   const nextWeekEnd = () => add(weekEnd(),7);
   const fmt = s => s ? td(s).toLocaleDateString('de-CH',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}) : 'Ohne Datum';
@@ -26,8 +25,16 @@
     return {key:'later',label:'Später',rank:4};
   }
   function meta(t){
-    const r=t.reminderTime?' · Erinnerung '+t.reminderTime:'';
-    return t.ruleType==='weekday' ? 'Wochentage '+(t.weekdays||[]).map(i=>D[i]).join(', ')+' · Ziel '+fmt(t.targetDate)+r : fmt(t.targetDate)+r;
+    const parts=[];
+    if(t.ruleType==='weekday'){
+      parts.push('Wochentage: '+(t.weekdays||[]).map(i=>D[i]).join(', '));
+      if(t.targetDate) parts.push('Bis: '+fmt(t.targetDate));
+    } else if(t.targetDate) {
+      parts.push('Am: '+fmt(t.targetDate));
+    }
+    if(t.reminderTime) parts.push('Erinnerung: '+t.reminderTime);
+    if(t.lastDone || t.completedAt) parts.push('Zuletzt: '+fmt((t.lastDone||t.completedAt).slice(0,10)));
+    return parts.join(' · ');
   }
   function toast(msg){
     const t=$('toast');
@@ -37,7 +44,7 @@
   function renderCard(t){
     const s=stat(t);
     const editIcon=done(t)?'↻':'✎';
-    return '<div class="card '+s.key+'" data-id="'+t.id+'"><button class="delSwipe" data-del="'+t.id+'">Löschen</button><button class="check" data-check="'+t.id+'">'+(done(t)?'✓':'○')+'</button><div><div class="name">'+(t.emoji?'<span class="emoji">'+esc(t.emoji)+'</span>':'')+'<span>'+esc(t.title)+'</span></div><div class="meta">'+meta(t)+((t.lastDone||t.completedAt)?' · zuletzt '+fmt((t.lastDone||t.completedAt).slice(0,10)):'')+'</div></div><div class="side"><span class="status">'+s.label+'</span><button class="edit" data-edit="'+t.id+'">'+editIcon+'</button></div></div>';
+    return '<div class="card '+s.key+'" data-id="'+t.id+'"><button class="delSwipe" data-del="'+t.id+'">Löschen</button><button class="check" data-check="'+t.id+'">'+(done(t)?'✓':'○')+'</button><div><div class="name">'+(t.emoji?'<span class="emoji">'+esc(t.emoji)+'</span>':'')+'<span>'+esc(t.title)+'</span></div><div class="meta">'+meta(t)+'</div></div><div class="side"><span class="status">'+s.label+'</span><button class="edit" data-edit="'+t.id+'">'+editIcon+'</button></div></div>';
   }
   function renderMain(){
     const list=$('list'), badge=$('badge');
@@ -101,7 +108,7 @@
     if(document.getElementById('historySwipeFixCss')) return;
     const style=document.createElement('style');
     style.id='historySwipeFixCss';
-    style.textContent='.histSwipe{position:relative;overflow:visible;transition:transform .22s ease}.histSwipe.swiped{transform:translateX(-96px)}.histSwipeDel{position:absolute;right:-88px;top:6px;bottom:6px;width:76px;border:0;border-radius:12px;background:var(--red);color:#fff;font-weight:900}.histDel{display:none!important}.done .edit{color:var(--green);font-weight:900}';
+    style.textContent='.histSwipe{position:relative;overflow:visible;transition:transform .22s ease}.histSwipe.swiped{transform:translateX(-96px)}.histSwipeDel{position:absolute;right:-88px;top:6px;bottom:6px;width:76px;border:0;border-radius:12px;background:var(--red);color:#fff;font-weight:900}.histDel{display:none!important}.done .edit{color:var(--green);font-weight:900}.meta{line-height:1.45}';
     document.head.appendChild(style);
   }
   function patchSaveForFutureDone(){
