@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f0f11">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>Meine Routinen</title>
+<style>
+body{font-family:system-ui;background:#0f0f11;color:#eee;max-width:430px;margin:auto;padding:20px}button,input{font:inherit}#tasks{margin-top:20px}.task{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #333;border-radius:12px;margin-bottom:10px;background:#17171a}.done{opacity:.5;text-decoration:line-through}#addForm{display:flex;gap:8px;margin-top:20px}input{flex:1;padding:10px;border-radius:10px;border:1px solid #333;background:#1a1a1e;color:#fff}button{padding:10px 14px;border:none;border-radius:10px;background:#e8e4dc;color:#111;cursor:pointer}
+</style>
+</head>
+<body>
+<h1>🗓️ Meine Routinen</h1>
+<p>Offlinefähige PWA für wiederkehrende Aufgaben.</p>
+<div id="addForm">
+<input id="taskInput" placeholder="Neue Routine…">
+<button id="addBtn">+</button>
+</div>
+<div id="tasks"></div>
+<script>
+const KEY='routinen-pwa';
+let tasks=JSON.parse(localStorage.getItem(KEY)||'[]');
+function save(){localStorage.setItem(KEY,JSON.stringify(tasks));render();}
+function render(){document.getElementById('tasks').innerHTML=tasks.map((t,i)=>`<div class="task ${t.done?'done':''}"><span>${t.text}</span><div><button onclick="toggle(${i})">✓</button> <button onclick="removeTask(${i})">✕</button></div></div>`).join('');}
+function toggle(i){tasks[i].done=!tasks[i].done;save();}
+function removeTask(i){tasks.splice(i,1);save();}
+document.getElementById('addBtn').onclick=()=>{const v=document.getElementById('taskInput').value.trim();if(!v)return;tasks.push({text:v,done:false});document.getElementById('taskInput').value='';save();};
+render();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js'));}
+</script>
+</body>
+</html>
