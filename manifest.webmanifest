@@ -1,0 +1,10 @@
+{
+  "name": "Meine Routinen",
+  "short_name": "Routinen",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f0f11",
+  "theme_color": "#0f0f11",
+  "description": "Offlinefähige Routinen-App",
+  "icons": []
+}
