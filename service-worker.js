@@ -1,7 +1,6 @@
-const CACHE='routinen-cache-v12';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/icon.svg','./history-swipe-fix.js'];
+const CACHE='routinen-cache-v13';
+const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/icon.svg'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
-async function patchHtml(r){let type=r.headers.get('content-type')||'';if(!type.includes('text/html'))return r;let html=await r.text();if(!html.includes('history-swipe-fix.js'))html=html.replace('</body>','<script src="./history-swipe-fix.js?v=12"></script></body>');return new Response(html,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store'}})}
-self.addEventListener('fetch',e=>{const url=new URL(e.request.url);const page=e.request.mode==='navigate'||url.pathname.endsWith('/')||url.pathname.endsWith('/index.html');if(page){e.respondWith(fetch(e.request,{cache:'no-store'}).then(patchHtml).catch(()=>caches.match('./index.html').then(r=>r?patchHtml(r):caches.match(e.request))));return}e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request)))});
+self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request)))});
 self.addEventListener('message',e=>{if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting()});
