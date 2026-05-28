@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0f131b" media="(prefers-color-scheme:dark)">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icons/icon.svg">
-  <link rel="stylesheet" href="./styles/app.css?v=22">
+  <link rel="stylesheet" href="./styles/app.css?v=23">
   <title>Meine Routinen</title>
 </head>
 <body>
@@ -28,41 +28,14 @@
       <button id="importBtn">Import</button>
     </div>
   </header>
-
   <main id="list" class="list"></main>
   <button id="fab">+</button>
   <div id="toast" class="toast"></div>
-  <div id="version" class="version">v22</div>
-
-  <section id="form" class="panel">
-    <div class="grab"></div>
-    <div id="formTitle" class="pt">Neue Aufgabe</div>
-    <div class="row"><input id="emoji" placeholder="Icon" maxlength="6" style="text-align:center"><input id="title" placeholder="Aufgabenname…"></div>
-    <div class="tabs"><button id="dateTab" class="tab on" type="button" data-mode="date">Datum</button><button id="weekTab" class="tab" type="button" data-mode="weekdays">Wochentage</button></div>
-    <div id="datePart"><label id="targetLabel">Zieldatum</label><input id="target" type="date"></div>
-    <div id="weekPart" style="display:none"><label id="weekdaysLabel">An diesen Tagen erledigen</label><div id="days" class="days"></div></div>
-    <label id="reminderLabel">Optionale Erinnerung</label><input id="reminder" type="time">
-    <div class="buttons"><button id="cancel" class="btn cancel">Abbrechen</button><button id="saveBtn" class="btn save">Speichern</button></div>
-    <button id="deleteBtn" class="btn danger" style="display:none">Löschen</button>
-  </section>
-
-  <section id="importPanel" class="panel">
-    <div class="grab"></div>
-    <div id="importTitle" class="pt">Import</div>
-    <div class="filebox"><p id="fileHelp">JSON-Datei aus Dateien/iCloud auswählen</p><input id="importFile" type="file" accept="application/json,.json" style="display:none"><button id="pickFile" class="btn save" style="width:100%">Datei auswählen</button></div>
-    <label id="pasteLabel">Oder JSON einfügen</label><textarea id="paste" placeholder='{"version":7,"tasks":[...]}'></textarea>
-    <div class="buttons"><button id="importCancel" class="btn cancel">Abbrechen</button><button id="importPaste" class="btn save">Importieren</button></div>
-  </section>
-
-  <section id="settingsPanel" class="panel">
-    <div class="grab"></div>
-    <div id="settingsTitle" class="pt">Einstellungen</div>
-    <label id="languageLabel">Sprache</label><select id="language"><option value="de">Deutsch</option><option value="en">English</option></select>
-    <div class="buttons"><button id="settingsCancel" class="btn cancel">Schließen</button><button id="settingsSave" class="btn save">Speichern</button></div>
-  </section>
-
+  <div id="version" class="version">v23</div>
+  <section id="form" class="panel"><div class="grab"></div><div id="formTitle" class="pt">Neue Aufgabe</div><div class="row"><input id="emoji" placeholder="Icon" maxlength="6" style="text-align:center"><input id="title" placeholder="Aufgabenname…"></div><div class="tabs"><button id="dateTab" class="tab on" type="button" data-mode="date">Datum</button><button id="weekTab" class="tab" type="button" data-mode="weekdays">Wochentage</button></div><div id="datePart"><label id="targetLabel">Zieldatum</label><input id="target" type="date"></div><div id="weekPart" style="display:none"><label id="weekdaysLabel">An diesen Tagen erledigen</label><div id="days" class="days"></div></div><label id="reminderLabel">Optionale Erinnerung</label><input id="reminder" type="time"><div class="buttons"><button id="cancel" class="btn cancel">Abbrechen</button><button id="saveBtn" class="btn save">Speichern</button></div><button id="deleteBtn" class="btn danger" style="display:none">Löschen</button></section>
+  <section id="importPanel" class="panel"><div class="grab"></div><div id="importTitle" class="pt">Import</div><div class="filebox"><p id="fileHelp">JSON-Datei aus Dateien/iCloud auswählen</p><input id="importFile" type="file" accept="application/json,.json" style="display:none"><button id="pickFile" class="btn save" style="width:100%">Datei auswählen</button></div><label id="pasteLabel">Oder JSON einfügen</label><textarea id="paste" placeholder='{"version":7,"tasks":[...]}'></textarea><div class="buttons"><button id="importCancel" class="btn cancel">Abbrechen</button><button id="importPaste" class="btn save">Importieren</button></div></section>
+  <section id="settingsPanel" class="panel"><div class="grab"></div><div id="settingsTitle" class="pt">Einstellungen</div><label id="languageLabel">Sprache</label><select id="language"><option value="de">Deutsch</option><option value="en">English</option></select><div class="buttons"><button id="settingsCancel" class="btn cancel">Schließen</button><button id="settingsSave" class="btn save">Speichern</button></div></section>
   <section id="history" class="full"><div class="fh"><h2 id="histTitle">Verlauf</h2><button id="histClose" class="btn cancel" style="padding:0 14px">×</button></div><div id="histBody" class="fb"></div></section>
-
-  <script type="module" src="./src/app.js?v=22"></script>
+  <script type="module" src="./src/app-v23.js?v=23"></script>
 </body>
 </html>
