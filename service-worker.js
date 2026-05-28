@@ -1,15 +1,15 @@
-const CACHE='routinen-cache-v23';
+const CACHE='routinen-cache-v24';
 const ASSETS=[
   './',
   './index.html',
   './manifest.webmanifest',
   './icons/icon.svg',
-  './styles/app.css?v=23',
+  './styles/app.css?v=24',
   './src/version.js',
   './src/emoji.js',
   './src/pull-refresh.js',
-  './src/app.js?v=22',
-  './src/app-v23.js?v=23'
+  './src/app.js?v=24',
+  './src/app-v23.js?v=24'
 ];
 self.addEventListener('install',event=>{
   self.skipWaiting();
