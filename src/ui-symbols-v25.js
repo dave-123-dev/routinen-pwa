@@ -1,6 +1,7 @@
 export function initTaskButtonSymbols(){
-  function apply(root=document){
-    root.querySelectorAll('.card .complete').forEach(button=>{
+  let scheduled=false;
+  function apply(){
+    document.querySelectorAll('.card .complete').forEach(button=>{
       const card=button.closest('.card');
       const tick=button.querySelector('.tick');
       if(!card||!tick)return;
@@ -11,12 +12,14 @@ export function initTaskButtonSymbols(){
       button.classList.toggle('is-complete',!isDone);
     });
   }
-  apply();
-  const list=document.getElementById('list');
-  if(list){
-    new MutationObserver(()=>apply(list)).observe(list,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+  function schedule(){
+    if(scheduled)return;
+    scheduled=true;
+    requestAnimationFrame(()=>{scheduled=false;apply();});
   }
+  apply();
   document.addEventListener('click',event=>{
-    if(event.target.closest('[data-check]')) setTimeout(()=>apply(),0);
+    if(event.target.closest('[data-check],[data-edit],[data-del],#saveBtn,#importPaste,#pickFile'))setTimeout(schedule,0);
   });
+  document.addEventListener('routinen:render',schedule);
 }
