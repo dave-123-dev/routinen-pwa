@@ -1,1 +1,4 @@
-.complete.is-complete .tick{display:none!important}.complete.is-reschedule{background:transparent!important;border:1px solid var(--line)!important;color:var(--accent2)!important}.complete.is-reschedule .tick{background:transparent!important;color:var(--accent)!important;width:auto;height:auto;border-radius:0;font-size:24px;line-height:1}.complete.is-reschedule span:last-child{color:var(--accent2)!important}
+.complete.is-complete .tick{display:none!important}
+.complete.is-reschedule{border:0!important;background:linear-gradient(180deg,var(--accent),var(--accent2))!important;color:#fff!important}
+.complete.is-reschedule .tick{background:rgba(255,255,255,.2)!important;color:#fff!important}
+.complete.is-reschedule span:last-child{color:#fff!important}

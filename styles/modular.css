@@ -1,0 +1,3 @@
+.tabs{grid-template-columns:repeat(3,1fr)}
+.complete:disabled{opacity:.58;color:var(--muted);background:var(--soft);border:1px solid var(--line)}
+.pastItem button{font:inherit}
