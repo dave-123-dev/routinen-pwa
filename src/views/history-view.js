@@ -4,15 +4,21 @@ import { DAY_NAMES } from '../i18n/messages.js';
 import { $, escapeHtml } from '../ui/dom.js';
 
 export class HistoryView {
-  constructor({ getTasks, getText, getLang }) {
+  constructor({ getTasks, getText, getLang, onDeleteEntry }) {
     this.getTasks = getTasks;
     this.getText = getText;
     this.getLang = getLang;
+    this.onDeleteEntry = onDeleteEntry;
   }
 
   bind() {
     $('historyBtn').onclick = () => this.openAll();
     $('histClose').onclick = () => $('history').classList.remove('show');
+    $('histBody').onclick = event => {
+      const button = event.target.closest('[data-history-delete]');
+      if (!button) return;
+      this.onDeleteEntry(button.dataset.taskId, decodeURIComponent(button.dataset.iso));
+    };
   }
 
   meta(task) {
@@ -21,8 +27,8 @@ export class HistoryView {
       .join('');
   }
 
-  row(iso) {
-    return `<div class="hist">${escapeHtml(formatDateTime(iso, this.getLang()))}</div>`;
+  row(taskId, iso) {
+    return `<div class="hist"><button class="histDel" data-history-delete="1" data-task-id="${taskId}" data-iso="${encodeURIComponent(iso)}">&times;</button>${escapeHtml(formatDateTime(iso, this.getLang()))}</div>`;
   }
 
   openTask(id) {
@@ -32,7 +38,7 @@ export class HistoryView {
     $('histTitle').textContent = `${task.emoji ? `${task.emoji} ` : ''}${task.title}`;
     $('histBody').innerHTML = `<div class="meta">${this.meta(task)}</div>${
       task.history?.length
-        ? task.history.slice().reverse().map(iso => this.row(iso)).join('')
+        ? task.history.slice().reverse().map(iso => this.row(task.id, iso)).join('')
         : `<div class="empty">${this.getText().noHistory}</div>`
     }`;
   }
@@ -44,7 +50,7 @@ export class HistoryView {
     $('histBody').innerHTML = this.getTasks().map(task => (
       `<h3>${escapeHtml(`${task.emoji ? `${task.emoji} ` : ''}${task.title}`)}</h3>${
         task.history?.length
-          ? task.history.slice().reverse().map(iso => this.row(iso)).join('')
+          ? task.history.slice().reverse().map(iso => this.row(task.id, iso)).join('')
           : `<div class="meta">${text.noHistory}</div>`
       }`
     )).join('');

@@ -1,12 +1,15 @@
 {
   "name": "Meine Routinen",
   "short_name": "Routinen",
-  "description": "Offlinefähige Routinen-App",
+  "description": "Offlinefaehige Routinen-App fuer Aufgaben, Termine und wiederkehrende Gewohnheiten.",
+  "id": "./",
+  "lang": "de",
   "start_url": "./",
   "scope": "./",
+  "display_override": ["standalone", "minimal-ui"],
   "display": "standalone",
-  "background_color": "#0f0f11",
-  "theme_color": "#0f0f11",
+  "background_color": "#f5f2ed",
+  "theme_color": "#f5f2ed",
   "orientation": "portrait",
   "icons": [
     {

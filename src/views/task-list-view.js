@@ -3,6 +3,7 @@ import { $ } from '../ui/dom.js';
 import { renderTaskCard } from '../ui/task-card.js';
 
 const groupLabel = (group, text) => ({
+  overdue: text.overdue,
   today: text.todayDue,
   tomorrow: text.tomorrow,
   week: text.week,
@@ -42,7 +43,10 @@ export class TaskListView {
     const tasks = this.getTasks();
     const text = this.getText();
     const sorted = sortTasks(tasks, text);
-    const due = sorted.filter(task => taskState(task, text).key === 'today').length;
+    const due = sorted.filter(task => {
+      const key = taskState(task, text).key;
+      return key === 'today' || key === 'overdue';
+    }).length;
     const badge = $('badge');
 
     badge.style.display = due ? 'block' : 'none';

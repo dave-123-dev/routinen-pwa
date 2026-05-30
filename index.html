@@ -7,9 +7,9 @@
   <meta name="theme-color" content="#0f131b" media="(prefers-color-scheme:dark)">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icons/icon.svg">
-  <link rel="stylesheet" href="./styles/app.css?v=35">
-  <link rel="stylesheet" href="./styles/v27-task-buttons.css?v=35">
-  <link rel="stylesheet" href="./styles/modular.css?v=35">
+  <link rel="stylesheet" href="./styles/app.css">
+  <link rel="stylesheet" href="./styles/task-buttons.css">
+  <link rel="stylesheet" href="./styles/modular.css">
   <title>Meine Routinen</title>
 </head>
 <body>
@@ -21,7 +21,7 @@
       </div>
       <div class="headright">
         <div id="badge" class="badge">0 heute</div>
-        <button id="settingsBtn" class="gear" aria-label="Einstellungen">⚙</button>
+        <button id="settingsBtn" class="gear" aria-label="Einstellungen">&#9881;</button>
       </div>
     </div>
     <div class="actions">
@@ -110,6 +110,11 @@
       <option value="de">Deutsch</option>
       <option value="en">English</option>
     </select>
+    <label id="viewModeLabel">Taskansicht</label>
+    <select id="defaultView">
+      <option id="viewDetailed" value="detailed">Detailliert</option>
+      <option id="viewCompact" value="compact">Kompakt</option>
+    </select>
     <div class="buttons">
       <button id="settingsCancel" class="btn cancel">Schließen</button>
       <button id="settingsSave" class="btn save">Speichern</button>
@@ -119,11 +124,11 @@
   <section id="history" class="full">
     <div class="fh">
       <h2 id="histTitle">Verlauf</h2>
-      <button id="histClose" class="btn cancel" style="padding:0 14px">×</button>
+      <button id="histClose" class="btn cancel" style="padding:0 14px">&times;</button>
     </div>
     <div id="histBody" class="fb"></div>
   </section>
 
-  <script type="module" src="./src/app.js?v=35"></script>
+  <script type="module" src="./src/app.js"></script>
 </body>
 </html>

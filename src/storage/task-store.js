@@ -3,7 +3,8 @@ import { normalizeTask } from '../domain/tasks.js';
 export const TASK_KEY = 'habit_tasks_v5';
 export const OLD_TASK_KEY = 'habit_tasks_v3';
 export const LANGUAGE_KEY = 'habit_language_v1';
-export const UI_KEY = 'routinen_ui_v35';
+export const UI_KEY = 'routinen_ui_v1';
+export const SETTINGS_KEY = 'routinen_settings_v1';
 
 export function loadTasks() {
   try {
@@ -36,4 +37,16 @@ export function loadUiState() {
 
 export function saveUiState(value) {
   localStorage.setItem(UI_KEY, JSON.stringify(value));
+}
+
+export function loadSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+export function saveSettings(value) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(value));
 }

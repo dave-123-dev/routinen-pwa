@@ -1,3 +1,4 @@
+import { formatDateTime } from '../domain/dates.js';
 import { DAY_NAMES } from '../i18n/messages.js';
 import { guessEmoji } from '../emoji.js';
 import { isDateTaskDone, isDisabledToday, taskMetaItems, taskState } from '../domain/tasks.js';
@@ -16,6 +17,7 @@ export function renderTaskCard(task, text, lang) {
   const label = disabled ? text.doneToday : (done ? text.again : text.mark);
   const cardClass = `card ${state.key}`;
   const icon = escapeHtml(task.emoji || guessEmoji(task.title) || '✓');
+  const compactDeadline = escapeHtml(task.nextExecution ? formatDateTime(task.nextExecution, lang) : text.open);
 
   return `
     <article class="${cardClass}" data-id="${task.id}">
@@ -27,8 +29,13 @@ export function renderTaskCard(task, text, lang) {
             <h3 class="taskTitle">${escapeHtml(task.title)}</h3>
             <button class="edit" data-edit="${task.id}" aria-label="${text.editTask}">${done ? '↻' : '✎'}</button>
           </div>
+          <div class="compactDeadline">${compactDeadline}</div>
           <div class="meta">${metaHtml(task, text, lang)}</div>
           <div class="status">${state.label}</div>
+          <div class="compactActions">
+            <button class="compactAction" data-edit="${task.id}" aria-label="${text.editTask}">✎</button>
+            <button class="compactAction" data-check="${task.id}" aria-label="${label}" ${disabled ? 'disabled' : ''}>✓</button>
+          </div>
         </div>
       </div>
       <button class="complete ${done ? 'is-reschedule' : 'is-complete'}" data-check="${task.id}" ${disabled ? 'disabled' : ''}>

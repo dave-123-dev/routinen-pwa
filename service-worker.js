@@ -1,18 +1,20 @@
-const CACHE = 'routinen-cache-v35';
+import { CACHE_NAME } from './src/version.js';
+
+const CACHE = CACHE_NAME;
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './icons/icon.svg',
-  './styles/app.css?v=35',
-  './styles/v27-task-buttons.css?v=35',
-  './styles/modular.css?v=35',
-  './src/app.js?v=35',
+  './styles/app.css',
+  './styles/task-buttons.css',
+  './styles/modular.css',
+  './src/app.js',
   './src/version.js',
   './src/emoji-map.js',
   './src/emoji.js',
   './src/pull-refresh.js',
-  './src/notifications-v31.js',
+  './src/notifications.js',
   './src/domain/dates.js',
   './src/domain/tasks.js',
   './src/i18n/messages.js',

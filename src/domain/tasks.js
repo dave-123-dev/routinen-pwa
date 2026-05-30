@@ -17,7 +17,7 @@ export const TASK_RULES = {
   INTERVAL: 'interval',
 };
 
-export const TASK_GROUPS = ['today', 'tomorrow', 'week', 'nextweek', 'later', 'open'];
+export const TASK_GROUPS = ['overdue', 'today', 'tomorrow', 'week', 'nextweek', 'later', 'open'];
 
 export function intervalMs(task) {
   const amount = Math.max(1, Number(task.intervalAmount || 1));
@@ -106,6 +106,7 @@ export function taskState(task, text, now = new Date()) {
   const nextDate = String(task.nextExecution || '').slice(0, 10);
   if (!next) return { key: 'open', label: text.open, rank: 6 };
   if (isDisabledToday(task)) return { key: 'later', label: text.doneToday, rank: 2.5 };
+  if (next < now) return { key: 'overdue', label: text.overdue, rank: -1 };
   if (next <= now) return { key: 'today', label: text.todayDue, rank: 0 };
   if (nextDate === addDays(localDate(now), 1)) return { key: 'tomorrow', label: text.tomorrow, rank: 1 };
   if (nextDate <= weekEnd(localDate(now))) return { key: 'week', label: text.week, rank: 2 };
@@ -186,4 +187,26 @@ export function historyEntries(tasks) {
     }
   });
   return entries.sort((a, b) => new Date(b.iso) - new Date(a.iso));
+}
+
+export function removeHistoryEntry(task, iso) {
+  const history = task.history.filter(entry => entry !== iso);
+  const last = history.length ? [...history].sort().at(-1) : null;
+
+  if (task.ruleType === TASK_RULES.DATE && task.completedAt === iso) {
+    return normalizeTask({
+      ...task,
+      history,
+      completed: false,
+      completedAt: null,
+      nextExecution: computeNextExecution(task, 'save'),
+    });
+  }
+
+  return normalizeTask({
+    ...task,
+    history,
+    lastDone: task.ruleType === TASK_RULES.WEEKDAY || task.ruleType === TASK_RULES.INTERVAL ? last : task.lastDone,
+    lastDoneDay: last ? String(last).slice(0, 10) : null,
+  });
 }

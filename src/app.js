@@ -1,13 +1,15 @@
 import { APP_VERSION } from './version.js';
 import { initPullRefresh } from './pull-refresh.js';
-import { initReminderNotifications } from './notifications-v31.js';
-import { completeTask, computeNextExecution, normalizeTask } from './domain/tasks.js';
+import { initReminderNotifications } from './notifications.js';
+import { completeTask, computeNextExecution, normalizeTask, removeHistoryEntry } from './domain/tasks.js';
 import { messagesFor, normalizeLanguage } from './i18n/messages.js';
 import {
   loadLanguage,
+  loadSettings,
   loadTasks,
   loadUiState,
   saveLanguage,
+  saveSettings as persistSettings,
   saveTasks,
   saveUiState,
 } from './storage/task-store.js';
@@ -22,6 +24,10 @@ import { PastView } from './views/past-view.js';
 
 let lang = normalizeLanguage(loadLanguage());
 let tasks = loadTasks();
+let settings = {
+  viewMode: 'detailed',
+  ...loadSettings(),
+};
 
 const text = () => messagesFor(lang);
 const findTask = id => tasks.find(task => String(task.id) === String(id));
@@ -72,10 +78,24 @@ function saveTask(editId, data) {
 }
 
 function deleteTask(id) {
+  if (!window.confirm(text().confirmDeleteTask)) return;
   tasks = tasks.filter(task => String(task.id) !== String(id));
   persistTasks();
   render();
   toast(text().deleted);
+}
+
+function deleteHistoryEntry(taskId, iso) {
+  if (!window.confirm(text().confirmDeleteHistory)) return;
+  tasks = tasks.map(task => (
+    String(task.id) === String(taskId)
+      ? removeHistoryEntry(task, iso)
+      : task
+  ));
+  persistTasks();
+  render();
+  historyView.openAll();
+  toast(text().deleteHistory);
 }
 
 function complete(id) {
@@ -119,9 +139,15 @@ function importText(value) {
   return tasks.length;
 }
 
-function saveSettings(nextLang) {
-  lang = normalizeLanguage(nextLang);
+function saveAppSettings(nextSettings) {
+  lang = normalizeLanguage(nextSettings.language);
   saveLanguage(lang);
+  settings = {
+    ...settings,
+    viewMode: nextSettings.viewMode === 'compact' ? 'compact' : 'detailed',
+  };
+  persistSettings(settings);
+  pastView.setViewMode(settings.viewMode);
   applyLanguage();
 }
 
@@ -147,6 +173,7 @@ const historyView = new HistoryView({
   getTasks: () => tasks,
   getText: text,
   getLang: () => lang,
+  onDeleteEntry: deleteHistoryEntry,
 });
 
 const importView = new ImportView({
@@ -157,7 +184,8 @@ const importView = new ImportView({
 const settingsView = new SettingsView({
   getText: text,
   getLang: () => lang,
-  onSave: saveSettings,
+  getViewMode: () => settings.viewMode,
+  onSave: saveAppSettings,
 });
 
 const pastView = new PastView({
@@ -184,7 +212,8 @@ function bind() {
 function restoreUi() {
   const ui = loadUiState();
   pastView.tab = ui.tab || 'current';
-  pastView.compact = Boolean(ui.compact);
+  pastView.setViewMode(settings.viewMode);
+  if (Object.hasOwn(ui, 'compact')) pastView.compact = Boolean(ui.compact);
 }
 
 function boot() {
@@ -193,7 +222,7 @@ function boot() {
   applyLanguage();
   initPullRefresh();
   initReminderNotifications();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js');
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js', { type: 'module' });
 }
 
 boot();
