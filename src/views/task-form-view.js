@@ -1,5 +1,5 @@
 import { localDate, localTime } from '../domain/dates.js';
-import { TASK_RULES } from '../domain/tasks.js';
+import { INTERVAL_ANCHOR_MODES, REMINDER_MODES, TASK_RULES } from '../domain/tasks.js';
 import { DAY_NAMES } from '../i18n/messages.js';
 import { guessEmoji } from '../emoji.js';
 import { $, hidePanel, showPanel, toast } from '../ui/dom.js';
@@ -48,6 +48,7 @@ export class TaskFormView {
       this.emojiManual = Boolean($('emoji').value.trim());
       this.lastAutoEmoji = '';
     });
+    $('reminderMode').addEventListener('change', () => this.updateReminderUi());
   }
 
   applyLanguage() {
@@ -58,12 +59,21 @@ export class TaskFormView {
     $('targetLabel').textContent = text.target;
     $('endTimeLabel').textContent = text.endTime;
     $('weekdaysLabel').textContent = text.weekdaysDo;
+    $('weekTargetTimeLabel').textContent = text.weekEndTime;
     $('allowMultiLabel').textContent = text.allowMulti;
     $('intervalEveryLabel').textContent = text.intervalEvery;
     $('intervalUnitLabel').textContent = text.intervalUnit;
+    $('intervalAnchorLabel').textContent = text.intervalAnchor;
+    $('anchorStart').textContent = text.anchorStart;
+    $('anchorLastDone').textContent = text.anchorLastDone;
     $('startDateLabel').textContent = text.startDate;
     $('startTimeLabel').textContent = text.startTime;
     $('reminderLabel').textContent = text.reminder;
+    $('reminderNone').textContent = text.reminderNone;
+    $('reminderAtTime').textContent = text.reminderAtTime;
+    $('reminderBefore').textContent = text.reminderBefore;
+    $('reminderTimeLabel').textContent = text.reminderAtTime;
+    $('reminderLeadLabel').textContent = text.reminderLead;
     $('detailsLabel').textContent = text.details;
     $('cancel').textContent = text.cancel;
     $('saveBtn').textContent = text.save;
@@ -71,6 +81,7 @@ export class TaskFormView {
     $('unitMinutes').textContent = text.minutes;
     $('unitHours').textContent = text.hours;
     this.renderDays();
+    this.updateReminderUi();
   }
 
   openAdd() {
@@ -86,14 +97,19 @@ export class TaskFormView {
     $('details').value = '';
     $('target').value = '';
     $('targetTime').value = '';
-    $('reminder').value = '';
+    $('weekTargetTime').value = '';
+    $('reminderMode').value = REMINDER_MODES.NONE;
+    $('reminderTime').value = '';
+    $('reminderLeadMinutes').value = '';
     $('allowMulti').checked = false;
     $('intervalAmount').value = 1;
     $('intervalUnit').value = 'hours';
     $('intervalStartDate').value = localDate();
     $('intervalStartTime').value = localTime();
+    $('intervalAnchorMode').value = INTERVAL_ANCHOR_MODES.LAST_DONE;
     $('deleteBtn').style.display = 'none';
     this.drawDays();
+    this.updateReminderUi();
     showPanel('form');
   }
 
@@ -111,15 +127,20 @@ export class TaskFormView {
     $('title').value = task.title || '';
     $('details').value = task.details || '';
     $('target').value = task.targetDate || '';
-    $('targetTime').value = task.targetTime || '';
-    $('reminder').value = task.reminderTime || '';
+    $('targetTime').value = task.ruleType === TASK_RULES.DATE ? (task.targetTime || '') : '';
+    $('weekTargetTime').value = task.ruleType === TASK_RULES.WEEKDAY ? (task.targetTime || '') : '';
+    $('reminderMode').value = task.reminderMode || REMINDER_MODES.NONE;
+    $('reminderTime').value = task.reminderTime || '';
+    $('reminderLeadMinutes').value = task.reminderLeadMinutes || '';
     $('allowMulti').checked = Boolean(task.allowMultiplePerDay);
     $('intervalAmount').value = task.intervalAmount || 1;
     $('intervalUnit').value = task.intervalUnit || 'hours';
     $('intervalStartDate').value = task.intervalStartDate || localDate();
     $('intervalStartTime').value = task.intervalStartTime || localTime();
+    $('intervalAnchorMode').value = task.intervalAnchorMode || INTERVAL_ANCHOR_MODES.LAST_DONE;
     $('deleteBtn').style.display = 'block';
     this.drawDays();
+    this.updateReminderUi();
     showPanel('form');
   }
 
@@ -130,16 +151,21 @@ export class TaskFormView {
       $('emoji').value = task.emoji || '';
       $('title').value = task.title || '';
       $('details').value = task.details || '';
-      $('reminder').value = task.reminderTime || '';
+      $('reminderMode').value = task.reminderMode || REMINDER_MODES.NONE;
+      $('reminderTime').value = task.reminderTime || '';
+      $('reminderLeadMinutes').value = task.reminderLeadMinutes || '';
       $('target').value = task.targetDate || '';
-      $('targetTime').value = task.targetTime || '';
+      $('targetTime').value = task.ruleType === TASK_RULES.DATE ? (task.targetTime || '') : '';
+      $('weekTargetTime').value = task.ruleType === TASK_RULES.WEEKDAY ? (task.targetTime || '') : '';
       $('allowMulti').checked = Boolean(task.allowMultiplePerDay);
       $('intervalAmount').value = task.intervalAmount || 1;
       $('intervalUnit').value = task.intervalUnit || 'hours';
       $('intervalStartDate').value = task.intervalStartDate || localDate();
       $('intervalStartTime').value = task.intervalStartTime || localTime();
+      $('intervalAnchorMode').value = task.intervalAnchorMode || INTERVAL_ANCHOR_MODES.LAST_DONE;
       this.selectedDays = Array.isArray(task.weekdays) ? [...task.weekdays] : [];
       this.drawDays();
+      this.updateReminderUi();
     }, 30);
   }
 
@@ -149,20 +175,31 @@ export class TaskFormView {
     if (!title) return toast(text.missingTitle);
     if (modeToRule(this.mode) === TASK_RULES.WEEKDAY && !this.selectedDays.length) return toast(text.chooseDay);
 
+    const ruleType = modeToRule(this.mode);
+    const reminderMode = this.sanitizedReminderMode(ruleType);
+    const reminderTime = reminderMode === REMINDER_MODES.TIME ? ($('reminderTime').value || '') : '';
+    const reminderLeadMinutes = reminderMode === REMINDER_MODES.BEFORE ? (Number($('reminderLeadMinutes').value) || 0) : 0;
+    const targetTime = ruleType === TASK_RULES.DATE
+      ? $('targetTime').value
+      : (ruleType === TASK_RULES.WEEKDAY ? $('weekTargetTime').value : '');
+
     this.onSave(this.editId, {
       title,
       details: $('details').value.trim(),
       emoji: $('emoji').value.trim() || guessEmoji(title),
-      reminderTime: $('reminder').value || '',
-      ruleType: modeToRule(this.mode),
+      reminderMode,
+      reminderTime,
+      reminderLeadMinutes,
+      ruleType,
       targetDate: $('target').value,
-      targetTime: $('targetTime').value,
+      targetTime,
       weekdays: [...this.selectedDays],
       allowMultiplePerDay: $('allowMulti').checked,
       intervalAmount: Number($('intervalAmount').value) || 1,
       intervalUnit: $('intervalUnit').value,
       intervalStartDate: $('intervalStartDate').value || localDate(),
       intervalStartTime: $('intervalStartTime').value || localTime(),
+      intervalAnchorMode: $('intervalAnchorMode').value || INTERVAL_ANCHOR_MODES.LAST_DONE,
     });
 
     hidePanel('form');
@@ -182,6 +219,22 @@ export class TaskFormView {
       const element = $(id);
       if (element) element.style.display = rule === this.mode ? 'block' : 'none';
     });
+    this.updateReminderUi();
+  }
+
+  sanitizedReminderMode(ruleType) {
+    if (ruleType === TASK_RULES.INTERVAL) {
+      return (Number($('reminderLeadMinutes').value) || 0) > 0 ? REMINDER_MODES.BEFORE : REMINDER_MODES.NONE;
+    }
+    return $('reminderMode').value || REMINDER_MODES.NONE;
+  }
+
+  updateReminderUi() {
+    const isInterval = this.mode === TASK_RULES.INTERVAL;
+    const reminderMode = isInterval ? REMINDER_MODES.BEFORE : ($('reminderMode').value || REMINDER_MODES.NONE);
+    $('reminderMode').style.display = isInterval ? 'none' : 'block';
+    $('reminderTimeWrap').style.display = !isInterval && reminderMode === REMINDER_MODES.TIME ? 'block' : 'none';
+    $('reminderLeadWrap').style.display = reminderMode === REMINDER_MODES.BEFORE ? 'block' : 'none';
   }
 
   renderDays() {

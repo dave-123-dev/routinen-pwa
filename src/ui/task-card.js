@@ -59,7 +59,7 @@ export function renderPastTaskCard(entry, lang) {
     });
 
   return `
-    <article class="pastItem" data-replay-id="${entry.task.id}">
+    <article class="pastItem" data-task-id="${entry.task.id}">
       <div class="pastEmoji">${escapeHtml(entry.task.emoji || '✓')}</div>
       <div>
         <div class="pastTitle">${escapeHtml(entry.task.title)}</div>

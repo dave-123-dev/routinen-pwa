@@ -1,5 +1,6 @@
 import {
   addDays,
+  addMinutes,
   formatDateTime,
   localDate,
   localDateTime,
@@ -17,47 +18,89 @@ export const TASK_RULES = {
   INTERVAL: 'interval',
 };
 
+export const INTERVAL_ANCHOR_MODES = {
+  START: 'start',
+  LAST_DONE: 'lastDone',
+};
+
+export const REMINDER_MODES = {
+  NONE: '',
+  TIME: 'time',
+  BEFORE: 'before',
+};
+
 export const TASK_GROUPS = ['overdue', 'today', 'tomorrow', 'week', 'nextweek', 'later', 'open'];
+
+const reminderClockPattern = /^\d{2}:\d{2}$/;
 
 export function intervalMs(task) {
   const amount = Math.max(1, Number(task.intervalAmount || 1));
   return amount * (task.intervalUnit === 'hours' ? 3600000 : 60000);
 }
 
-export function firstInterval(task) {
-  const base = parseDateTime(toDateTime(
+function intervalBase(task) {
+  return parseDateTime(toDateTime(
     task.intervalStartDate || localDate(),
     task.intervalStartTime || localTime(),
-  ));
-  const date = base || new Date();
-  date.setTime(date.getTime() + intervalMs(task));
+  )) || new Date();
+}
+
+function intervalExecutionTime(task) {
+  if (task.ruleType === TASK_RULES.WEEKDAY) return task.targetTime || '23:59';
+  if (task.ruleType === TASK_RULES.DATE) return task.targetTime || '23:59';
+  return '';
+}
+
+function nextIntervalOnGrid(task, after) {
+  const base = intervalBase(task);
+  const step = intervalMs(task);
+  const date = new Date(base);
+  date.setTime(date.getTime() + step);
+  while (date <= after) date.setTime(date.getTime() + step);
   return localDateTime(date);
 }
 
+export function firstInterval(task) {
+  return nextIntervalOnGrid(task, intervalBase(task));
+}
+
 export function nextIntervalAfter(task, after = new Date()) {
-  let date = parseDateTime(task.nextExecution) || parseDateTime(firstInterval(task)) || new Date();
+  if (task.intervalAnchorMode === INTERVAL_ANCHOR_MODES.START) {
+    return nextIntervalOnGrid(task, after);
+  }
   const step = intervalMs(task);
-  while (date <= after) date = new Date(date.getTime() + step);
-  return localDateTime(date);
+  const anchor = task.lastDone ? parseDateTime(task.lastDone) : null;
+  if (anchor) return localDateTime(addMinutes(anchor, step / 60000));
+  return nextIntervalOnGrid(task, after);
+}
+
+export function reminderSummary(task, text) {
+  if (task.reminderMode === REMINDER_MODES.TIME && task.reminderTime) return task.reminderTime;
+  if (task.reminderMode === REMINDER_MODES.BEFORE && task.reminderLeadMinutes > 0) {
+    return `${task.reminderLeadMinutes} ${text.minutes} ${text.beforeShort}`;
+  }
+  return '';
 }
 
 export function computeNextExecution(task, reason = 'save') {
   if (task.ruleType === TASK_RULES.INTERVAL) {
-    return reason === 'done'
-      ? nextIntervalAfter(task, new Date())
-      : task.nextExecution || firstInterval(task);
+    if (reason === 'done') return nextIntervalAfter(task, new Date());
+    if (task.intervalAnchorMode === INTERVAL_ANCHOR_MODES.LAST_DONE && task.lastDone) {
+      return nextIntervalAfter(task, parseDateTime(task.lastDone) || new Date());
+    }
+    return nextIntervalOnGrid(task, new Date(0));
   }
 
   if (task.ruleType === TASK_RULES.WEEKDAY) {
-    const time = task.reminderTime || '00:00';
+    const time = intervalExecutionTime(task);
     if (reason === 'done') {
       if (task.allowMultiplePerDay) return task.nextExecution || toDateTime(localDate(), time);
       return nextWeekday(addDays(localDate(), 1), task.weekdays, time, true);
     }
-    return task.nextExecution || nextWeekday(localDate(), task.weekdays, time, true);
+    return nextWeekday(localDate(), task.weekdays, time, true);
   }
 
-  return toDateTime(task.targetDate, task.targetTime || '23:59');
+  return toDateTime(task.targetDate, intervalExecutionTime(task));
 }
 
 export function normalizeTask(raw = {}) {
@@ -67,7 +110,7 @@ export function normalizeTask(raw = {}) {
   task.details = task.details || '';
   task.emoji = task.emoji || '';
   task.targetDate = task.targetDate || '';
-  task.targetTime = task.targetTime || '';
+  task.targetTime = reminderClockPattern.test(String(task.targetTime || '')) ? task.targetTime : '';
   task.endDateTime = toDateTime(task.targetDate, task.targetTime || '23:59');
   task.weekdays = Array.isArray(task.weekdays)
     ? [...new Set(task.weekdays.map(Number).filter(value => value >= 0 && value <= 6))].sort((a, b) => a - b)
@@ -76,15 +119,30 @@ export function normalizeTask(raw = {}) {
   task.intervalAmount = Math.max(1, Number(task.intervalAmount || 1));
   task.intervalUnit = task.intervalUnit === 'hours' ? 'hours' : 'minutes';
   task.intervalStartDate = task.intervalStartDate || localDate();
-  task.intervalStartTime = task.intervalStartTime || localTime();
-  task.reminderTime = task.reminderTime || '';
+  task.intervalStartTime = reminderClockPattern.test(String(task.intervalStartTime || ''))
+    ? task.intervalStartTime
+    : localTime();
+  task.intervalAnchorMode = task.intervalAnchorMode === INTERVAL_ANCHOR_MODES.START
+    ? INTERVAL_ANCHOR_MODES.START
+    : INTERVAL_ANCHOR_MODES.LAST_DONE;
+  task.reminderMode = [REMINDER_MODES.TIME, REMINDER_MODES.BEFORE].includes(task.reminderMode)
+    ? task.reminderMode
+    : REMINDER_MODES.NONE;
+  task.reminderTime = reminderClockPattern.test(String(task.reminderTime || '')) ? task.reminderTime : '';
+  task.reminderLeadMinutes = Math.max(0, Number(task.reminderLeadMinutes || 0));
+  if (task.reminderMode === REMINDER_MODES.TIME && !task.reminderTime) task.reminderMode = REMINDER_MODES.NONE;
+  if (task.reminderMode === REMINDER_MODES.BEFORE && task.reminderLeadMinutes <= 0) task.reminderMode = REMINDER_MODES.NONE;
+  if (task.ruleType === TASK_RULES.INTERVAL && task.reminderMode === REMINDER_MODES.TIME) {
+    task.reminderMode = REMINDER_MODES.NONE;
+    task.reminderTime = '';
+  }
   task.completed = task.ruleType === TASK_RULES.DATE && Boolean(task.completed);
   task.completedAt = task.completedAt || null;
   task.lastDone = task.lastDone || null;
   task.lastDoneDay = task.lastDoneDay || ((task.lastDone || task.completedAt || '').slice(0, 10) || null);
   task.history = Array.isArray(task.history) ? task.history : [];
   task.id = task.id || Date.now() + Math.random();
-  task.nextExecution = task.nextExecution || computeNextExecution(task, 'save');
+  task.nextExecution = computeNextExecution(task, 'save');
   if (task.ruleType === TASK_RULES.DATE) task.nextExecution = computeNextExecution(task, 'save');
   return task;
 }
@@ -107,7 +165,7 @@ export function taskState(task, text, now = new Date()) {
   if (!next) return { key: 'open', label: text.open, rank: 6 };
   if (isDisabledToday(task)) return { key: 'later', label: text.doneToday, rank: 2.5 };
   if (next < now) return { key: 'overdue', label: text.overdue, rank: -1 };
-  if (next <= now) return { key: 'today', label: text.todayDue, rank: 0 };
+  if (nextDate === localDate(now)) return { key: 'today', label: text.todayDue, rank: 0 };
   if (nextDate === addDays(localDate(now), 1)) return { key: 'tomorrow', label: text.tomorrow, rank: 1 };
   if (nextDate <= weekEnd(localDate(now))) return { key: 'week', label: text.week, rank: 2 };
   if (nextDate <= nextWeekEnd(localDate(now))) return { key: 'nextweek', label: text.nextweek, rank: 3 };
@@ -126,7 +184,6 @@ export function completeTask(task, now = new Date()) {
         ...task,
         completed: false,
         completedAt: null,
-        nextExecution: computeNextExecution(task, 'save'),
       });
     }
 
@@ -153,15 +210,19 @@ export function taskMetaItems(task, text, lang, dayNames) {
   if (task.details) items.push(`${text.metaDetails}: ${task.details}`);
   if (task.ruleType === TASK_RULES.WEEKDAY) {
     items.push(`${text.metaDays}: ${task.weekdays.map(index => dayNames[index]).join(', ')}`);
+    if (task.targetTime) items.push(`${text.metaAt}: ${task.targetTime}`);
   }
   if (task.ruleType === TASK_RULES.INTERVAL) {
     items.push(`${text.metaEvery}: ${task.intervalAmount} ${task.intervalUnit === 'hours' ? text.hours : text.minutes}`);
+    items.push(`${text.metaAnchor}: ${task.intervalAnchorMode === INTERVAL_ANCHOR_MODES.START ? text.anchorStart : text.anchorLastDone}`);
+    if (task.intervalStartTime) items.push(`${text.metaAt}: ${task.intervalStartTime}`);
+    if (task.nextExecution) items.push(`${text.metaNext}: ${formatDateTime(task.nextExecution, lang)}`);
   }
-  if (task.ruleType === TASK_RULES.DATE && task.endDateTime) {
-    items.push(`${text.metaEnd}: ${formatDateTime(task.endDateTime, lang)}`);
+  if (task.ruleType === TASK_RULES.DATE && task.targetTime && task.endDateTime) {
+    items.push(`${text.metaUntil}: ${formatDateTime(task.endDateTime, lang)}`);
   }
-  if (task.nextExecution) items.push(`${text.metaNext}: ${formatDateTime(task.nextExecution, lang)}`);
-  if (task.reminderTime) items.push(`${text.metaReminder}: ${task.reminderTime}`);
+  const reminder = reminderSummary(task, text);
+  if (reminder) items.push(`${text.metaReminder}: ${reminder}`);
   if (task.lastDone || task.completedAt) {
     items.push(`${text.metaLast}: ${formatDateTime(task.lastDone || task.completedAt, lang)}`);
   }
@@ -199,7 +260,6 @@ export function removeHistoryEntry(task, iso) {
       history,
       completed: false,
       completedAt: null,
-      nextExecution: computeNextExecution(task, 'save'),
     });
   }
 

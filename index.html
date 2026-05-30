@@ -25,9 +25,9 @@
       </div>
     </div>
     <div class="actions">
-      <button id="historyBtn">Verlauf</button>
-      <button id="exportBtn">Teilen</button>
-      <button id="importBtn">Import</button>
+      <button id="historyBtn" class="iconAction" aria-label="Verlauf">&#8635;</button>
+      <button id="exportBtn" class="iconAction" aria-label="Teilen">&#8682;</button>
+      <button id="importBtn" class="iconAction" aria-label="Import">&#10515;</button>
     </div>
   </header>
 
@@ -59,9 +59,11 @@
     <div id="weekdaysPart" style="display:none">
       <label id="weekdaysLabel">An diesen Tagen erledigen</label>
       <div id="days" class="days"></div>
+      <label id="weekTargetTimeLabel">Endzeit</label>
+      <input id="weekTargetTime" type="time">
       <label style="display:flex;gap:10px;align-items:center;text-transform:none;letter-spacing:0;font-size:14px">
         <input id="allowMulti" type="checkbox" style="width:auto;min-height:auto">
-        <span id="allowMultiLabel">Mehrfachausführung am selben Tag erlauben</span>
+        <span id="allowMultiLabel">MehrfachausfÃ¼hrung am selben Tag erlauben</span>
       </label>
     </div>
     <div id="intervalPart" style="display:none">
@@ -76,25 +78,42 @@
       <input id="intervalStartDate" type="date">
       <label id="startTimeLabel">Startzeit</label>
       <input id="intervalStartTime" type="time">
+      <label id="intervalAnchorLabel">Intervall</label>
+      <select id="intervalAnchorMode">
+        <option id="anchorStart" value="start">ab Startzeit</option>
+        <option id="anchorLastDone" value="lastDone">ab letzter AusfÃ¼hrung</option>
+      </select>
     </div>
     <label id="reminderLabel">Optionale Erinnerung</label>
-    <input id="reminder" type="time">
+    <select id="reminderMode">
+      <option id="reminderNone" value="">Keine Erinnerung</option>
+      <option id="reminderAtTime" value="time">Zur Uhrzeit</option>
+      <option id="reminderBefore" value="before">Vorher erinnern</option>
+    </select>
+    <div id="reminderTimeWrap">
+      <label id="reminderTimeLabel">Uhrzeit</label>
+      <input id="reminderTime" type="time">
+    </div>
+    <div id="reminderLeadWrap" style="display:none">
+      <label id="reminderLeadLabel">Minuten vorher</label>
+      <input id="reminderLeadMinutes" type="number" min="1" step="1" inputmode="numeric">
+    </div>
     <div class="buttons">
       <button id="cancel" class="btn cancel">Abbrechen</button>
       <button id="saveBtn" class="btn save">Speichern</button>
     </div>
-    <button id="deleteBtn" class="btn danger" style="display:none">Löschen</button>
+    <button id="deleteBtn" class="btn danger" style="display:none">LÃ¶schen</button>
   </section>
 
   <section id="importPanel" class="panel">
     <div class="grab"></div>
     <div id="importTitle" class="pt">Import</div>
     <div class="filebox">
-      <p id="fileHelp">JSON-Datei aus Dateien/iCloud auswählen</p>
+      <p id="fileHelp">JSON-Datei aus Dateien/iCloud auswÃ¤hlen</p>
       <input id="importFile" type="file" accept="application/json,.json" style="display:none">
-      <button id="pickFile" class="btn save" style="width:100%">Datei auswählen</button>
+      <button id="pickFile" class="btn save" style="width:100%">Datei auswÃ¤hlen</button>
     </div>
-    <label id="pasteLabel">Oder JSON einfügen</label>
+    <label id="pasteLabel">Oder JSON einfÃ¼gen</label>
     <textarea id="paste" placeholder='{"version":10,"tasks":[...]}'></textarea>
     <div class="buttons">
       <button id="importCancel" class="btn cancel">Abbrechen</button>
@@ -116,7 +135,7 @@
       <option id="viewCompact" value="compact">Kompakt</option>
     </select>
     <div class="buttons">
-      <button id="settingsCancel" class="btn cancel">Schließen</button>
+      <button id="settingsCancel" class="btn cancel">SchlieÃŸen</button>
       <button id="settingsSave" class="btn save">Speichern</button>
     </div>
   </section>

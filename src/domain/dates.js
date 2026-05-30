@@ -29,6 +29,13 @@ export function addDays(date, amount) {
   return localDate(value);
 }
 
+export function addMinutes(value, amount) {
+  const date = value instanceof Date ? new Date(value) : parseDateTime(value);
+  if (!date) return null;
+  date.setMinutes(date.getMinutes() + amount);
+  return date;
+}
+
 export function weekdayOf(date) {
   return (new Date(`${date}T00:00`).getDay() + 6) % 7;
 }

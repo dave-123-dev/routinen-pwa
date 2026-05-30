@@ -1,7 +1,7 @@
 import { APP_VERSION } from './version.js';
 import { initPullRefresh } from './pull-refresh.js';
 import { initReminderNotifications } from './notifications.js';
-import { completeTask, computeNextExecution, normalizeTask, removeHistoryEntry } from './domain/tasks.js';
+import { completeTask, computeNextExecution, normalizeTask, removeHistoryEntry, taskState } from './domain/tasks.js';
 import { messagesFor, normalizeLanguage } from './i18n/messages.js';
 import {
   loadLanguage,
@@ -47,13 +47,24 @@ function applyLanguage() {
   $('version').textContent = APP_VERSION;
   $('eyebrow').textContent = t.eyebrow;
   $('mainTitle').textContent = t.title;
-  $('historyBtn').textContent = t.history;
-  $('exportBtn').textContent = t.share;
-  $('importBtn').textContent = t.import;
+  $('historyBtn').title = t.history;
+  $('historyBtn').setAttribute('aria-label', t.history);
+  $('exportBtn').title = t.share;
+  $('exportBtn').setAttribute('aria-label', t.share);
+  $('importBtn').title = t.import;
+  $('importBtn').setAttribute('aria-label', t.import);
   taskFormView.applyLanguage();
   importView.applyLanguage();
   settingsView.applyLanguage();
   render();
+}
+
+function focusTaskInCurrentList(id) {
+  requestAnimationFrame(() => {
+    const card = [...document.querySelectorAll('#list [data-id]')].find(node => String(node.dataset.id) === String(id));
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
 }
 
 function saveTask(editId, data) {
@@ -74,7 +85,11 @@ function saveTask(editId, data) {
     : [...tasks, next];
 
   persistTasks();
+  if (!editId && taskState(next, text()).key === 'overdue') {
+    pastView.tab = 'current';
+  }
   render();
+  if (!editId && taskState(next, text()).key === 'overdue') focusTaskInCurrentList(next.id);
 }
 
 function deleteTask(id) {
@@ -85,7 +100,7 @@ function deleteTask(id) {
   toast(text().deleted);
 }
 
-function deleteHistoryEntry(taskId, iso) {
+function deleteHistoryEntry(taskId, iso, options = {}) {
   if (!window.confirm(text().confirmDeleteHistory)) return;
   tasks = tasks.map(task => (
     String(task.id) === String(taskId)
@@ -94,7 +109,7 @@ function deleteHistoryEntry(taskId, iso) {
   ));
   persistTasks();
   render();
-  historyView.openAll();
+  if (options.reopen !== false) historyView.openAll();
   toast(text().deleteHistory);
 }
 
@@ -193,6 +208,8 @@ const pastView = new PastView({
   getText: text,
   getLang: () => lang,
   onReplay: task => taskFormView.openFromTask(task),
+  onOpenHistory: id => historyView.openTask(id),
+  onDeleteHistory: deleteHistoryEntry,
 });
 
 function bind() {

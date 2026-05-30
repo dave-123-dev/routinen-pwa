@@ -12,7 +12,6 @@ export class HistoryView {
   }
 
   bind() {
-    $('historyBtn').onclick = () => this.openAll();
     $('histClose').onclick = () => $('history').classList.remove('show');
     $('histBody').onclick = event => {
       const button = event.target.closest('[data-history-delete]');
