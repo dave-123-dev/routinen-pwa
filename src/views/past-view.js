@@ -34,11 +34,6 @@ export class PastView {
         this.render();
       }
     };
-    $('historyBtn').onclick = () => {
-      this.tab = 'history';
-      this.shown = PAGE_SIZE;
-      this.render();
-    };
     $('pastList').onclick = event => {
       const deleteButton = event.target.closest('[data-history-delete]');
       if (deleteButton && this.tab === 'history' && this.onDeleteHistory) {
@@ -61,34 +56,36 @@ export class PastView {
       const style = document.createElement('style');
       style.id = 'past-view-style';
       style.textContent = `
-        .viewTabs{display:flex;gap:10px;margin:0 24px 16px}
-        .viewTabs button,.compactToggle,.loadMorePast,.compactAction{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:12px 16px;font-weight:800}
-        .viewTabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-        .viewTabs .historyTab{width:48px;padding:12px 0;display:inline-flex;align-items:center;justify-content:center}
+        .viewTabs{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 20px 14px}
+        .viewTabGroup{display:inline-flex;align-items:center;gap:6px;padding:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;box-shadow:var(--shadow)}
+        .viewTabGroup button,.compactToggle,.loadMorePast,.compactAction{border:1px solid transparent;background:transparent;color:var(--muted);border-radius:999px;padding:10px 14px;font-weight:800}
+        .viewTabGroup button.on{background:var(--text);color:var(--bg)}
+        .viewTabs .historyTab{width:42px;padding:10px 0;display:inline-flex;align-items:center;justify-content:center}
         .compactToggle{margin-left:auto}
-        .pastList{padding:0 24px 120px}
-        .pastItem{position:relative;border:1px solid var(--line);border-radius:24px;padding:18px 62px 18px 18px;margin:0 0 14px;background:var(--surface);display:grid;grid-template-columns:56px 1fr;gap:14px;align-items:center;box-shadow:var(--shadow)}
-        .pastEmoji{font-size:34px}
-        .pastTitle{font-size:20px;font-weight:900;color:var(--text)}
-        .pastDate{font-size:15px;color:var(--muted);margin-top:4px}
-        .pastReload{position:absolute;right:16px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--accent);font-size:20px}
-        .historyGroup{border:1px solid var(--line);border-radius:24px;padding:18px;margin:0 0 14px;background:var(--surface);box-shadow:var(--shadow)}
-        .historyGroup h3{margin:0 0 10px;font-size:20px}
-        .historyRows{display:grid;gap:8px}
+        .compactToggle{border:1px solid var(--line);background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+        .pastList{padding:0 20px 120px}
+        .pastItem{position:relative;border:1px solid var(--line);border-radius:20px;padding:16px 56px 16px 16px;margin:0 0 12px;background:var(--surface);display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:center;box-shadow:var(--shadow)}
+        .pastEmoji{font-size:28px}
+        .pastTitle{font-size:18px;font-weight:800;color:var(--text)}
+        .pastDate{font-size:14px;color:var(--muted);margin-top:4px}
+        .pastReload{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--accent);font-size:18px}
+        .historyGroup{border:1px solid var(--line);border-radius:20px;padding:16px;margin:0 0 12px;background:var(--surface);box-shadow:var(--shadow)}
+        .historyGroup h3{margin:0 0 8px;font-size:18px}
+        .historyRows{display:grid;gap:6px;margin-top:10px}
         .historyRow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
         .historyRow:first-child{border-top:0}
-        .historyDelete{width:34px;height:34px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--muted);font-size:18px}
-        .loadMorePast{width:100%;margin:12px 0 30px}
+        .historyDelete{width:32px;height:32px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--muted);font-size:18px}
+        .loadMorePast{width:100%;margin:12px 0 30px;border:1px solid var(--line);background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
         .compactDeadline,.compactActions{display:none}
-        body.compact #list .card{display:grid;grid-template-columns:86px 1fr;gap:12px;align-items:center;padding:16px 18px}
+        body.compact #list .card{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center;padding:14px 16px}
         body.compact #list .card .meta,body.compact #list .card .status,body.compact #list .card .complete,body.compact #list .card .delSwipe,body.compact #list .card .edit{display:none!important}
         body.compact #list .card .taskTop{display:contents}
-        body.compact #list .card .iconbox{width:72px;height:72px;font-size:32px}
+        body.compact #list .card .iconbox{width:60px;height:60px;font-size:28px;border-radius:18px}
         body.compact #list .card .titleRow{display:block}
-        body.compact #list .card .taskTitle{font-size:22px;margin:0}
-        body.compact #list .card .compactDeadline{display:block;color:var(--muted);font-size:14px;margin-top:6px}
-        body.compact #list .card .compactActions{display:flex;gap:8px;margin-top:12px}
-        body.compact #list .card .compactAction{width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;border-radius:50%}
+        body.compact #list .card .taskTitle{font-size:19px;margin:0}
+        body.compact #list .card .compactDeadline{display:block;color:var(--muted);font-size:13px;margin-top:4px}
+        body.compact #list .card .compactActions{display:flex;gap:6px;margin-top:10px}
+        body.compact #list .card .compactAction{width:34px;height:34px;padding:0;display:flex;align-items:center;justify-content:center;font-size:16px;border-radius:50%;border:1px solid var(--line);background:var(--soft)}
         body.compact #list .card .compactAction:disabled{opacity:.58}
       `;
       document.head.appendChild(style);
@@ -98,7 +95,7 @@ export class PastView {
       const tabs = document.createElement('div');
       tabs.id = 'viewTabs';
       tabs.className = 'viewTabs';
-      tabs.innerHTML = '<button data-tab="current"></button><button data-tab="past"></button><button data-tab="history" class="historyTab" type="button" aria-label="Verlauf">&#8635;</button><button id="compactToggle" class="compactToggle" type="button"></button>';
+      tabs.innerHTML = '<div class="viewTabGroup"><button data-tab="current"></button><button data-tab="past"></button><button data-tab="history" class="historyTab" type="button" aria-label="Verlauf">&#8635;</button></div><button id="compactToggle" class="compactToggle" type="button"></button>';
       $('list').parentNode.insertBefore(tabs, $('list'));
     }
 

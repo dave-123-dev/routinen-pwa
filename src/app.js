@@ -47,12 +47,12 @@ function applyLanguage() {
   $('version').textContent = APP_VERSION;
   $('eyebrow').textContent = t.eyebrow;
   $('mainTitle').textContent = t.title;
-  $('historyBtn').title = t.history;
-  $('historyBtn').setAttribute('aria-label', t.history);
   $('exportBtn').title = t.share;
   $('exportBtn').setAttribute('aria-label', t.share);
   $('importBtn').title = t.import;
   $('importBtn').setAttribute('aria-label', t.import);
+  $('settingsBtn').title = t.settings;
+  $('settingsBtn').setAttribute('aria-label', t.settings);
   taskFormView.applyLanguage();
   importView.applyLanguage();
   settingsView.applyLanguage();
