@@ -4,6 +4,7 @@ import { renderPastTaskCard } from '../ui/task-card.js';
 import { DAY_NAMES } from '../i18n/messages.js';
 
 const PAGE_SIZE = 20;
+const VALID_TABS = ['current', 'past', 'history'];
 
 export class PastView {
   constructor({ getTasks, getText, getLang, onReplay, onOpenHistory, onDeleteHistory }) {
@@ -117,8 +118,13 @@ export class PastView {
     return this.compact ? 'compact' : 'detailed';
   }
 
+  setTab(tab) {
+    this.tab = VALID_TABS.includes(tab) ? tab : 'current';
+  }
+
   render() {
     this.ensureUi();
+    this.setTab(this.tab);
     const text = this.getText();
     document.querySelector('[data-tab="current"]').textContent = text.current;
     document.querySelector('[data-tab="past"]').textContent = text.past;

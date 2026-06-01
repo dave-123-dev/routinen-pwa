@@ -1,4 +1,4 @@
-import { normalizeTask } from '../domain/tasks.js';
+import { isTaskLike, normalizeTask } from '../domain/tasks.js';
 
 export const TASK_KEY = 'habit_tasks_v5';
 export const OLD_TASK_KEY = 'habit_tasks_v3';
@@ -8,7 +8,9 @@ export const SETTINGS_KEY = 'routinen_settings_v1';
 
 export function loadTasks() {
   try {
-    return JSON.parse(localStorage.getItem(TASK_KEY) || localStorage.getItem(OLD_TASK_KEY) || '[]')
+    const parsed = JSON.parse(localStorage.getItem(TASK_KEY) || localStorage.getItem(OLD_TASK_KEY) || '[]');
+    return (Array.isArray(parsed) ? parsed : [])
+      .filter(isTaskLike)
       .map(normalizeTask);
   } catch {
     return [];

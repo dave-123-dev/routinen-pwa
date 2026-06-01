@@ -33,6 +33,10 @@ export const TASK_GROUPS = ['overdue', 'today', 'tomorrow', 'week', 'nextweek', 
 
 const reminderClockPattern = /^\d{2}:\d{2}$/;
 
+function asTaskObject(raw) {
+  return raw && typeof raw === 'object' ? raw : {};
+}
+
 export function intervalMs(task) {
   const amount = Math.max(1, Number(task.intervalAmount || 1));
   return amount * (task.intervalUnit === 'hours' ? 3600000 : 60000);
@@ -104,7 +108,7 @@ export function computeNextExecution(task, reason = 'save') {
 }
 
 export function normalizeTask(raw = {}) {
-  const task = { ...raw };
+  const task = { ...asTaskObject(raw) };
   task.ruleType = task.ruleType === 'weekdays' ? TASK_RULES.WEEKDAY : task.ruleType || TASK_RULES.DATE;
   task.title = task.title || '';
   task.details = task.details || '';
@@ -145,6 +149,17 @@ export function normalizeTask(raw = {}) {
   task.nextExecution = computeNextExecution(task, 'save');
   if (task.ruleType === TASK_RULES.DATE) task.nextExecution = computeNextExecution(task, 'save');
   return task;
+}
+
+export function isTaskLike(value) {
+  return Boolean(value) && typeof value === 'object'
+    && (
+      typeof value.title === 'string'
+      || typeof value.ruleType === 'string'
+      || Array.isArray(value.weekdays)
+      || typeof value.targetDate === 'string'
+      || typeof value.intervalAmount !== 'undefined'
+    );
 }
 
 export function isDateTaskDone(task) {

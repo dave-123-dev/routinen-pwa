@@ -1,7 +1,7 @@
 import { APP_VERSION } from './version.js';
 import { initPullRefresh } from './pull-refresh.js';
 import { initReminderNotifications } from './notifications.js';
-import { completeTask, computeNextExecution, normalizeTask, removeHistoryEntry, taskState } from './domain/tasks.js';
+import { completeTask, computeNextExecution, isTaskLike, normalizeTask, removeHistoryEntry, taskState } from './domain/tasks.js';
 import { messagesFor, normalizeLanguage } from './i18n/messages.js';
 import {
   loadLanguage,
@@ -31,6 +31,26 @@ let settings = {
 
 const text = () => messagesFor(lang);
 const findTask = id => tasks.find(task => String(task.id) === String(id));
+
+function normalizeImportedTasks(rawTasks) {
+  return rawTasks
+    .filter(isTaskLike)
+    .map(normalizeTask);
+}
+
+function extractImportTasks(data) {
+  if (Array.isArray(data)) return data;
+  if (!data || typeof data !== 'object') return null;
+
+  const candidates = [
+    data.tasks,
+    data.items,
+    data.habits,
+    data.routines,
+    data.data,
+  ];
+  return candidates.find(Array.isArray) || null;
+}
 
 function persistTasks() {
   saveTasks(tasks);
@@ -127,28 +147,30 @@ function exportJSON() {
     exportedAt: new Date().toISOString(),
     tasks,
   };
-  const file = new File(
-    [JSON.stringify(payload, null, 2)],
-    `routinen-${localDate()}.json`,
-    { type: 'application/json' },
-  );
+  const filename = `routinen-${localDate()}.json`;
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
   const anchor = document.createElement('a');
-  const url = URL.createObjectURL(file);
+  const url = URL.createObjectURL(blob);
   anchor.href = url;
-  anchor.download = file.name;
+  anchor.download = filename;
+  anchor.rel = 'noopener';
+  document.body.appendChild(anchor);
   anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 500);
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function importText(value) {
   const data = JSON.parse(value);
-  const rawTasks = data.tasks || data;
-  if (!Array.isArray(rawTasks)) throw new Error('Kein tasks-Array gefunden');
+  const rawTasks = extractImportTasks(data);
+  if (!Array.isArray(rawTasks)) throw new Error('Kein lesbares Aufgaben-Array gefunden');
   if (data.language) {
     lang = normalizeLanguage(data.language);
     saveLanguage(lang);
   }
-  tasks = rawTasks.map(normalizeTask);
+  tasks = normalizeImportedTasks(rawTasks);
+  if (!tasks.length && rawTasks.length) throw new Error('Importdatei enthält keine lesbaren Aufgaben');
   persistTasks();
   applyLanguage();
   return tasks.length;
@@ -224,11 +246,20 @@ function bind() {
     tab: pastView.tab,
     compact: pastView.compact,
   }), true);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    tasks = loadTasks();
+    render();
+  });
+  window.addEventListener('pageshow', () => {
+    tasks = loadTasks();
+    render();
+  });
 }
 
 function restoreUi() {
   const ui = loadUiState();
-  pastView.tab = ui.tab || 'current';
+  pastView.setTab(ui.tab || 'current');
   pastView.setViewMode(settings.viewMode);
   if (Object.hasOwn(ui, 'compact')) pastView.compact = Boolean(ui.compact);
 }

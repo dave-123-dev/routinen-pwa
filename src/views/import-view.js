@@ -15,8 +15,15 @@ export class ImportView {
       const file = event.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = result => this.importText(result.target.result);
-      reader.readAsText(file);
+      reader.onload = result => {
+        this.importText(typeof result.target?.result === 'string' ? result.target.result : '');
+        event.target.value = '';
+      };
+      reader.onerror = () => {
+        toast(`${text.importError}: Datei konnte nicht gelesen werden`);
+        event.target.value = '';
+      };
+      reader.readAsText(file, 'utf-8');
     };
   }
 
@@ -33,6 +40,7 @@ export class ImportView {
   importText(value) {
     const text = this.getText();
     try {
+      if (!String(value || '').trim()) throw new Error('Datei ist leer oder unlesbar');
       const count = this.onImport(value);
       hidePanel('importPanel');
       toast(`${count} ${text.loaded}`);
