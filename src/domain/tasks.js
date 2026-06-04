@@ -29,12 +29,32 @@ export const REMINDER_MODES = {
   BEFORE: 'before',
 };
 
+export const HISTORY_TYPES = {
+  DONE: 'done',
+  SKIP: 'skip',
+};
+
 export const TASK_GROUPS = ['overdue', 'today', 'tomorrow', 'week', 'nextweek', 'later', 'open'];
 
 const reminderClockPattern = /^\d{2}:\d{2}$/;
 
 function asTaskObject(raw) {
   return raw && typeof raw === 'object' ? raw : {};
+}
+
+function normalizeHistoryEntry(entry) {
+  if (typeof entry === 'string') return { iso: entry, type: HISTORY_TYPES.DONE };
+  if (!entry || typeof entry !== 'object') return null;
+  const iso = String(entry.iso || entry.date || entry.at || '');
+  if (!iso) return null;
+  return {
+    iso,
+    type: entry.type === HISTORY_TYPES.SKIP ? HISTORY_TYPES.SKIP : HISTORY_TYPES.DONE,
+  };
+}
+
+function latestHistoryIso(history) {
+  return history.length ? history.map(entry => entry.iso).sort().at(-1) : null;
 }
 
 export function intervalMs(task) {
@@ -144,7 +164,9 @@ export function normalizeTask(raw = {}) {
   task.completedAt = task.completedAt || null;
   task.lastDone = task.lastDone || null;
   task.lastDoneDay = task.lastDoneDay || ((task.lastDone || task.completedAt || '').slice(0, 10) || null);
-  task.history = Array.isArray(task.history) ? task.history : [];
+  task.history = Array.isArray(task.history)
+    ? task.history.map(normalizeHistoryEntry).filter(Boolean)
+    : [];
   task.id = task.id || Date.now() + Math.random();
   task.nextExecution = computeNextExecution(task, 'save');
   if (task.ruleType === TASK_RULES.DATE) task.nextExecution = computeNextExecution(task, 'save');
@@ -206,7 +228,7 @@ export function completeTask(task, now = new Date()) {
       ...task,
       completed: true,
       completedAt: iso,
-      history: [...task.history, iso],
+      history: [...task.history, { iso, type: HISTORY_TYPES.DONE }],
     });
   }
 
@@ -214,7 +236,32 @@ export function completeTask(task, now = new Date()) {
     ...task,
     lastDone: iso,
     lastDoneDay: day,
-    history: [...task.history, iso],
+    history: [...task.history, { iso, type: HISTORY_TYPES.DONE }],
+  };
+  next.nextExecution = computeNextExecution(next, 'done');
+  return normalizeTask(next);
+}
+
+export function skipTask(task, now = new Date()) {
+  if (isDisabledToday(task, localDate(now))) return task;
+
+  const iso = now.toISOString();
+  const day = localDate(now);
+
+  if (task.ruleType === TASK_RULES.DATE) {
+    return normalizeTask({
+      ...task,
+      completed: true,
+      completedAt: iso,
+      history: [...task.history, { iso, type: HISTORY_TYPES.SKIP }],
+    });
+  }
+
+  const next = {
+    ...task,
+    lastDone: iso,
+    lastDoneDay: day,
+    history: [...task.history, { iso, type: HISTORY_TYPES.SKIP }],
   };
   next.nextExecution = computeNextExecution(next, 'done');
   return normalizeTask(next);
@@ -257,17 +304,22 @@ export function sortTasks(tasks, text) {
 export function historyEntries(tasks) {
   const entries = [];
   tasks.forEach(task => {
-    (Array.isArray(task.history) ? task.history : []).forEach(iso => entries.push({ iso, task }));
+    (Array.isArray(task.history) ? task.history : [])
+      .map(normalizeHistoryEntry)
+      .filter(Boolean)
+      .forEach(entry => entries.push({ ...entry, task }));
     if (task.completedAt && !entries.some(entry => entry.iso === task.completedAt && String(entry.task.id) === String(task.id))) {
-      entries.push({ iso: task.completedAt, task });
+      entries.push({ iso: task.completedAt, type: HISTORY_TYPES.DONE, task });
     }
   });
   return entries.sort((a, b) => new Date(b.iso) - new Date(a.iso));
 }
 
 export function removeHistoryEntry(task, iso) {
-  const history = task.history.filter(entry => entry !== iso);
-  const last = history.length ? [...history].sort().at(-1) : null;
+  const history = task.history
+    .map(normalizeHistoryEntry)
+    .filter(entry => entry && entry.iso !== iso);
+  const last = latestHistoryIso(history);
 
   if (task.ruleType === TASK_RULES.DATE && task.completedAt === iso) {
     return normalizeTask({

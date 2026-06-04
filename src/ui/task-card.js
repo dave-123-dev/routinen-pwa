@@ -27,13 +27,17 @@ export function renderTaskCard(task, text, lang) {
         <div>
           <div class="titleRow">
             <h3 class="taskTitle">${escapeHtml(task.title)}</h3>
-            <button class="edit" data-edit="${task.id}" aria-label="${text.editTask}">${done ? '↻' : '✎'}</button>
+            <div class="taskIconActions">
+              <button class="edit" data-edit="${task.id}" aria-label="${text.editTask}">${done ? '↻' : '✎'}</button>
+              <button class="edit skipIcon" data-skip="${task.id}" aria-label="${text.skip}" ${disabled ? 'disabled' : ''}>↷</button>
+            </div>
           </div>
           <div class="compactDeadline">${compactDeadline}</div>
           <div class="meta">${metaHtml(task, text, lang)}</div>
           <div class="status">${state.label}</div>
           <div class="compactActions">
             <button class="compactAction" data-edit="${task.id}" aria-label="${text.editTask}">✎</button>
+            <button class="compactAction skipIcon" data-skip="${task.id}" aria-label="${text.skip}" ${disabled ? 'disabled' : ''}>↷</button>
             <button class="compactAction" data-check="${task.id}" aria-label="${label}" ${disabled ? 'disabled' : ''}>✓</button>
           </div>
         </div>
@@ -60,7 +64,7 @@ export function renderPastTaskCard(entry, lang) {
 
   return `
     <article class="pastItem" data-task-id="${entry.task.id}">
-      <div class="pastEmoji">${escapeHtml(entry.task.emoji || '✓')}</div>
+      <div class="pastEmoji">${escapeHtml(entry.task.emoji || (entry.type === 'skip' ? '↷' : '✓'))}</div>
       <div>
         <div class="pastTitle">${escapeHtml(entry.task.title)}</div>
         <div class="pastDate">${escapeHtml(when)}</div>

@@ -64,6 +64,7 @@ export class PastView {
         .viewTabs .historyTab{width:42px;padding:10px 0;display:inline-flex;align-items:center;justify-content:center}
         .compactToggle{margin-left:auto}
         .compactToggle{border:1px solid var(--line);background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+        .compactToggle.is-hidden{display:none}
         .pastList{padding:0 20px 120px}
         .pastItem{position:relative;border:1px solid var(--line);border-radius:20px;padding:16px 56px 16px 16px;margin:0 0 12px;background:var(--surface);display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:center;box-shadow:var(--shadow)}
         .pastEmoji{font-size:28px}
@@ -74,6 +75,8 @@ export class PastView {
         .historyGroup h3{margin:0 0 8px;font-size:18px}
         .historyRows{display:grid;gap:6px;margin-top:10px}
         .historyRow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+        .historyEvent{display:flex;align-items:center;gap:10px}
+        .historyEventIcon{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--soft);color:var(--text);font-weight:900}
         .historyRow:first-child{border-top:0}
         .historyDelete{width:32px;height:32px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--muted);font-size:18px}
         .loadMorePast{width:100%;margin:12px 0 30px;border:1px solid var(--line);background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
@@ -134,6 +137,7 @@ export class PastView {
     document.querySelector('[data-tab="past"]').classList.toggle('on', this.tab === 'past');
     document.querySelector('[data-tab="history"]').classList.toggle('on', this.tab === 'history');
     $('compactToggle').textContent = this.compact ? text.detailedView : text.compactView;
+    $('compactToggle').classList.toggle('is-hidden', this.tab === 'history');
     document.body.classList.toggle('compact', this.compact);
     $('list').style.display = this.tab === 'current' ? 'block' : 'none';
     $('pastList').style.display = this.tab === 'current' ? 'none' : 'block';
@@ -169,28 +173,37 @@ export class PastView {
 
   renderHistory() {
     const text = this.getText();
-    const tasks = this.getTasks();
+    const tasks = this.getTasks()
+      .map(task => ({ task, entries: historyEntries([task]) }))
+      .sort((a, b) => {
+        const lastA = a.entries[0]?.iso || 0;
+        const lastB = b.entries[0]?.iso || 0;
+        return new Date(lastB) - new Date(lastA);
+      });
     const groups = tasks.map(task => {
-      const rows = historyEntries([task]).map(entry => entry.iso);
-      const meta = taskMetaItems(task, text, this.getLang(), DAY_NAMES[this.getLang()])
+      const rows = task.entries;
+      const meta = taskMetaItems(task.task, text, this.getLang(), DAY_NAMES[this.getLang()])
         .map(item => `<span class="meta-line">${escapeHtml(item)}</span>`)
         .join('');
       return `
         <section class="historyGroup">
-          <h3>${escapeHtml(`${task.emoji ? `${task.emoji} ` : ''}${task.title}`)}</h3>
+          <h3>${escapeHtml(`${task.task.emoji ? `${task.task.emoji} ` : ''}${task.task.title}`)}</h3>
           <div class="meta">${meta || text.noHistory}</div>
           <div class="historyRows">${
             rows.length
-              ? rows.map(iso => `
+              ? rows.map(entry => `
                 <div class="historyRow">
-                  <div>${escapeHtml(new Date(iso).toLocaleString(this.getLang() === 'en' ? 'en-GB' : 'de-CH', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  }))}</div>
-                  <button class="historyDelete" data-history-delete="1" data-task-id="${task.id}" data-iso="${encodeURIComponent(iso)}">&times;</button>
+                  <div class="historyEvent">
+                    <span class="historyEventIcon">${entry.type === 'skip' ? '↷' : '✓'}</span>
+                    <span>${escapeHtml(new Date(entry.iso).toLocaleString(this.getLang() === 'en' ? 'en-GB' : 'de-CH', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    }))}</span>
+                  </div>
+                  <button class="historyDelete" data-history-delete="1" data-task-id="${task.task.id}" data-iso="${encodeURIComponent(entry.iso)}">&times;</button>
                 </div>
               `).join('')
               : `<div class="empty">${text.noHistory}</div>`

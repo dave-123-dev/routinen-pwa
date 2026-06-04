@@ -1,7 +1,7 @@
 import { APP_VERSION } from './version.js';
 import { initPullRefresh } from './pull-refresh.js';
 import { initReminderNotifications } from './notifications.js';
-import { completeTask, computeNextExecution, isTaskLike, normalizeTask, removeHistoryEntry, taskState } from './domain/tasks.js';
+import { completeTask, computeNextExecution, isTaskLike, normalizeTask, removeHistoryEntry, skipTask, taskState } from './domain/tasks.js';
 import { messagesFor, normalizeLanguage } from './i18n/messages.js';
 import {
   loadLanguage,
@@ -139,6 +139,12 @@ function complete(id) {
   render();
 }
 
+function skip(id) {
+  tasks = tasks.map(task => (String(task.id) === String(id) ? skipTask(task) : task));
+  persistTasks();
+  render();
+}
+
 function exportJSON() {
   const payload = {
     version: 10,
@@ -193,6 +199,7 @@ const taskListView = new TaskListView({
   getText: text,
   getLang: () => lang,
   onComplete: complete,
+  onSkip: skip,
   onDelete: deleteTask,
   onEdit: id => taskFormView.openEdit(id),
   onOpenHistory: id => historyView.openTask(id),

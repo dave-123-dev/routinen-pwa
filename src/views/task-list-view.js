@@ -13,11 +13,12 @@ const groupLabel = (group, text) => ({
 }[group] || group);
 
 export class TaskListView {
-  constructor({ getTasks, getText, getLang, onComplete, onDelete, onEdit, onOpenHistory }) {
+  constructor({ getTasks, getText, getLang, onComplete, onSkip, onDelete, onEdit, onOpenHistory }) {
     this.getTasks = getTasks;
     this.getText = getText;
     this.getLang = getLang;
     this.onComplete = onComplete;
+    this.onSkip = onSkip;
     this.onDelete = onDelete;
     this.onEdit = onEdit;
     this.onOpenHistory = onOpenHistory;
@@ -30,6 +31,9 @@ export class TaskListView {
 
       button = event.target.closest('[data-check]');
       if (button) return this.onComplete(button.dataset.check);
+
+      button = event.target.closest('[data-skip]');
+      if (button) return this.onSkip(button.dataset.skip);
 
       button = event.target.closest('[data-edit]');
       if (button) return this.onEdit(button.dataset.edit);
@@ -52,7 +56,9 @@ export class TaskListView {
     badge.style.display = due ? 'block' : 'none';
     badge.textContent = `${due} ${text.today}`;
 
-    if (!tasks.length) {
+    const visibleTasks = sorted.filter(task => taskState(task, text).key !== 'done');
+
+    if (!visibleTasks.length) {
       $('list').innerHTML = `<div class="empty">${text.empty}</div>`;
       document.dispatchEvent(new CustomEvent('routinen:render'));
       return;
@@ -60,17 +66,11 @@ export class TaskListView {
 
     let html = '';
     TASK_GROUPS.forEach(group => {
-      const groupTasks = sorted.filter(task => taskState(task, text).key === group);
+      const groupTasks = visibleTasks.filter(task => taskState(task, text).key === group);
       if (!groupTasks.length) return;
       html += `<div class="section">${groupLabel(group, text)}</div>`;
       html += groupTasks.map(task => renderTaskCard(task, text, this.getLang())).join('');
     });
-
-    const done = sorted.filter(task => taskState(task, text).key === 'done');
-    if (done.length) {
-      html += `<div class="section done">${text.done}</div>`;
-      html += done.map(task => renderTaskCard(task, text, this.getLang())).join('');
-    }
 
     $('list').innerHTML = html;
     document.dispatchEvent(new CustomEvent('routinen:render'));
