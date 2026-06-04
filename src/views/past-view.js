@@ -69,6 +69,7 @@ export class PastView {
         .pastItem{position:relative;border:1px solid var(--line);border-radius:20px;padding:16px 56px 16px 16px;margin:0 0 12px;background:var(--surface);display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:center;box-shadow:var(--shadow)}
         .pastEmoji{font-size:28px}
         .pastTitle{font-size:18px;font-weight:800;color:var(--text)}
+        .pastEventIcon{width:24px;height:24px;margin-right:8px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--soft);color:var(--text);font-size:15px;font-weight:900;vertical-align:middle}
         .pastDate{font-size:14px;color:var(--muted);margin-top:4px}
         .pastReload{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--accent);font-size:18px}
         .historyGroup{border:1px solid var(--line);border-radius:20px;padding:16px;margin:0 0 12px;background:var(--surface);box-shadow:var(--shadow)}

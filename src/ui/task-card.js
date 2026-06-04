@@ -1,13 +1,18 @@
 import { formatDateTime } from '../domain/dates.js';
 import { DAY_NAMES } from '../i18n/messages.js';
 import { guessEmoji } from '../emoji.js';
-import { isDateTaskDone, isDisabledToday, taskMetaItems, taskState } from '../domain/tasks.js';
+import { isDateTaskDone, isDisabledToday, TASK_RULES, taskMetaItems, taskState } from '../domain/tasks.js';
 import { escapeHtml } from './dom.js';
 
 function metaHtml(task, text, lang) {
   return taskMetaItems(task, text, lang, DAY_NAMES[lang])
     .map(item => `<span class="meta-line">${escapeHtml(item)}</span>`)
     .join('');
+}
+
+function compactDeadlineText(task, lang) {
+  if (task.ruleType !== TASK_RULES.DATE || !task.targetDate) return '';
+  return formatDateTime(task.endDateTime || task.targetDate, lang);
 }
 
 export function renderTaskCard(task, text, lang) {
@@ -17,7 +22,7 @@ export function renderTaskCard(task, text, lang) {
   const label = disabled ? text.doneToday : (done ? text.again : text.mark);
   const cardClass = `card ${state.key}`;
   const icon = escapeHtml(task.emoji || guessEmoji(task.title) || '✓');
-  const compactDeadline = escapeHtml(task.nextExecution ? formatDateTime(task.nextExecution, lang) : text.open);
+  const compactDeadline = escapeHtml(compactDeadlineText(task, lang));
 
   return `
     <article class="${cardClass}" data-id="${task.id}">
@@ -32,7 +37,7 @@ export function renderTaskCard(task, text, lang) {
               <button class="edit skipIcon" data-skip="${task.id}" aria-label="${text.skip}" ${disabled ? 'disabled' : ''}>↷</button>
             </div>
           </div>
-          <div class="compactDeadline">${compactDeadline}</div>
+          ${compactDeadline ? `<div class="compactDeadline">${compactDeadline}</div>` : ''}
           <div class="meta">${metaHtml(task, text, lang)}</div>
           <div class="status">${state.label}</div>
           <div class="compactActions">
@@ -66,7 +71,7 @@ export function renderPastTaskCard(entry, lang) {
     <article class="pastItem" data-task-id="${entry.task.id}">
       <div class="pastEmoji">${escapeHtml(entry.task.emoji || (entry.type === 'skip' ? '↷' : '✓'))}</div>
       <div>
-        <div class="pastTitle">${escapeHtml(entry.task.title)}</div>
+        <div class="pastTitle"><span class="pastEventIcon">${entry.type === 'skip' ? '↷' : '✓'}</span>${escapeHtml(entry.task.title)}</div>
         <div class="pastDate">${escapeHtml(when)}</div>
       </div>
       <button class="pastReload" type="button" data-replay-id="${entry.task.id}" aria-label="Als neue Aufgabe übernehmen">↻</button>
