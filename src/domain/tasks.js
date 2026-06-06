@@ -57,6 +57,14 @@ function latestHistoryIso(history) {
   return history.length ? history.map(entry => entry.iso).sort().at(-1) : null;
 }
 
+function lastDoneHistory(history) {
+  return history
+    .filter(entry => entry.type === HISTORY_TYPES.DONE)
+    .map(entry => entry.iso)
+    .sort()
+    .at(-1) || null;
+}
+
 export function intervalMs(task) {
   const amount = Math.max(1, Number(task.intervalAmount || 1));
   return amount * (task.intervalUnit === 'hours' ? 3600000 : 60000);
@@ -242,6 +250,10 @@ export function completeTask(task, now = new Date()) {
   return normalizeTask(next);
 }
 
+export function latestHistoryEntry(task) {
+  return historyEntries([task])[0] || null;
+}
+
 export function skipTask(task, now = new Date()) {
   if (isDisabledToday(task, localDate(now))) return task;
 
@@ -333,7 +345,28 @@ export function removeHistoryEntry(task, iso) {
   return normalizeTask({
     ...task,
     history,
-    lastDone: task.ruleType === TASK_RULES.WEEKDAY || task.ruleType === TASK_RULES.INTERVAL ? last : task.lastDone,
+    lastDone: task.ruleType === TASK_RULES.WEEKDAY || task.ruleType === TASK_RULES.INTERVAL ? lastDoneHistory(history) : task.lastDone,
     lastDoneDay: last ? String(last).slice(0, 10) : null,
   });
+}
+
+export function updateHistoryEntry(task, oldIso, nextIso) {
+  const history = task.history
+    .map(normalizeHistoryEntry)
+    .filter(Boolean)
+    .map(entry => (entry.iso === oldIso ? { ...entry, iso: nextIso } : entry));
+  const last = latestHistoryIso(history);
+  const lastDone = lastDoneHistory(history);
+  const updates = {
+    ...task,
+    history,
+    lastDone: task.ruleType === TASK_RULES.WEEKDAY || task.ruleType === TASK_RULES.INTERVAL ? lastDone : task.lastDone,
+    lastDoneDay: last ? String(last).slice(0, 10) : null,
+  };
+
+  if (task.ruleType === TASK_RULES.DATE && task.completedAt === oldIso) {
+    updates.completedAt = nextIso;
+  }
+
+  return normalizeTask(updates);
 }

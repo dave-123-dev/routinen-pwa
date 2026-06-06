@@ -30,7 +30,7 @@ export class TaskListView {
       if (button) return this.onDelete(button.dataset.del);
 
       button = event.target.closest('[data-check]');
-      if (button) return this.onComplete(button.dataset.check);
+      if (button) return this.onComplete(button.dataset.check, button);
 
       button = event.target.closest('[data-skip]');
       if (button) return this.onSkip(button.dataset.skip);

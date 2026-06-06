@@ -33,7 +33,7 @@
   <main id="list" class="list"></main>
   <button id="fab" aria-label="Neue Aufgabe">+</button>
   <div id="toast" class="toast"></div>
-  <div id="version" class="version">v37</div>
+  <div id="version" class="version">v41</div>
 
   <section id="form" class="panel">
     <div class="grab"></div>
@@ -174,6 +174,25 @@
     <div class="buttons">
       <button id="settingsCancel" class="btn cancel">Schließen</button>
       <button id="settingsSave" class="btn save">Speichern</button>
+    </div>
+  </section>
+
+  <section id="historyEditPanel" class="panel">
+    <div class="grab"></div>
+    <div id="historyEditTitle" class="pt">Verlauf bearbeiten</div>
+    <div class="formGrid two">
+      <div>
+        <label id="historyEditDateLabel">Datum</label>
+        <input id="historyEditDate" type="date">
+      </div>
+      <div>
+        <label id="historyEditTimeLabel">Uhrzeit</label>
+        <input id="historyEditTime" type="time">
+      </div>
+    </div>
+    <div class="buttons">
+      <button id="historyEditCancel" class="btn cancel">Abbrechen</button>
+      <button id="historyEditSave" class="btn save">Speichern</button>
     </div>
   </section>
 

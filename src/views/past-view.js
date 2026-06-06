@@ -1,23 +1,27 @@
-import { historyEntries, taskMetaItems } from '../domain/tasks.js';
+import { historyEntries } from '../domain/tasks.js';
 import { $, escapeHtml } from '../ui/dom.js';
 import { renderPastTaskCard } from '../ui/task-card.js';
-import { DAY_NAMES } from '../i18n/messages.js';
 
 const PAGE_SIZE = 20;
+const INITIAL_HISTORY_LIMIT = 2;
+const HISTORY_STEP = 5;
 const VALID_TABS = ['current', 'past', 'history'];
 
 export class PastView {
-  constructor({ getTasks, getText, getLang, onReplay, onOpenHistory, onDeleteHistory }) {
+  constructor({ getTasks, getText, getLang, onReplay, onOpenHistory, onDeleteHistory, onEditHistory }) {
     this.getTasks = getTasks;
     this.getText = getText;
     this.getLang = getLang;
     this.onReplay = onReplay;
     this.onOpenHistory = onOpenHistory;
     this.onDeleteHistory = onDeleteHistory;
+    this.onEditHistory = onEditHistory;
     this.tab = 'current';
     this.compact = false;
     this.defaultView = 'detailed';
     this.shown = PAGE_SIZE;
+    this.historyExpanded = new Map();
+    this.historyShown = INITIAL_HISTORY_LIMIT;
   }
 
   bind() {
@@ -27,6 +31,7 @@ export class PastView {
       if (tab) {
         this.tab = tab.dataset.tab;
         this.shown = PAGE_SIZE;
+        if (this.tab === 'history') this.historyShown = INITIAL_HISTORY_LIMIT;
         this.render();
       }
       if (event.target.closest('#compactToggle')) {
@@ -36,9 +41,21 @@ export class PastView {
       }
     };
     $('pastList').onclick = event => {
+      const moreHistory = event.target.closest('[data-history-more]');
+      if (moreHistory && this.tab === 'history') {
+        this.historyShown += HISTORY_STEP;
+        this.renderHistory();
+        return;
+      }
+
       const deleteButton = event.target.closest('[data-history-delete]');
       if (deleteButton && this.tab === 'history' && this.onDeleteHistory) {
         this.onDeleteHistory(deleteButton.dataset.taskId, decodeURIComponent(deleteButton.dataset.iso), { reopen: false });
+        return;
+      }
+      const historyItem = event.target.closest('[data-history-edit]');
+      if (historyItem && this.tab !== 'current' && this.onEditHistory) {
+        this.onEditHistory(historyItem.dataset.taskId, decodeURIComponent(historyItem.dataset.iso));
         return;
       }
       const replay = event.target.closest('[data-replay-id]');
@@ -66,20 +83,24 @@ export class PastView {
         .compactToggle{border:1px solid var(--line);background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
         .compactToggle.is-hidden{display:none}
         .pastList{padding:0 20px 120px}
-        .pastItem{position:relative;border:1px solid var(--line);border-radius:20px;padding:16px 56px 16px 16px;margin:0 0 12px;background:var(--surface);display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:center;box-shadow:var(--shadow)}
+        .pastItem{position:relative;border:1px solid var(--line);border-radius:20px;padding:16px 92px 16px 16px;margin:0 0 12px;background:var(--surface);display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:center;box-shadow:var(--shadow)}
         .pastEmoji{font-size:28px}
         .pastTitle{font-size:18px;font-weight:800;color:var(--text)}
         .pastEventIcon{width:24px;height:24px;margin-right:8px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--soft);color:var(--text);font-size:15px;font-weight:900;vertical-align:middle}
         .pastDate{font-size:14px;color:var(--muted);margin-top:4px}
-        .pastReload{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--accent);font-size:18px}
+        .pastEdit,.pastReload{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border:1px solid var(--line);border-radius:50%;background:transparent;font-size:18px}
+        .pastEdit{right:52px;color:var(--muted)}
+        .pastReload{right:14px;color:var(--accent)}
         .historyGroup{border:1px solid var(--line);border-radius:20px;padding:16px;margin:0 0 12px;background:var(--surface);box-shadow:var(--shadow)}
         .historyGroup h3{margin:0 0 8px;font-size:18px}
         .historyRows{display:grid;gap:6px;margin-top:10px}
         .historyRow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+        .historyRow[data-history-edit]{cursor:pointer}
         .historyEvent{display:flex;align-items:center;gap:10px}
         .historyEventIcon{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--soft);color:var(--text);font-weight:900}
         .historyRow:first-child{border-top:0}
         .historyDelete{width:32px;height:32px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--muted);font-size:18px}
+        .historyMore{width:38px;height:38px;margin:8px auto 0;border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--soft);color:var(--text);font-size:20px}
         .loadMorePast{width:100%;margin:12px 0 30px;border:1px solid var(--line);background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
         .compactDeadline,.compactActions{display:none}
         body.compact #list .card{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center;padding:14px 16px}
@@ -158,7 +179,7 @@ export class PastView {
     }
 
     const visible = entries.slice(0, this.shown)
-      .map(entry => renderPastTaskCard(entry, this.getLang()))
+      .map(entry => renderPastTaskCard(entry, this.getLang(), text))
       .join('');
     $('pastList').innerHTML = visible + (
       entries.length > this.shown
@@ -174,44 +195,41 @@ export class PastView {
 
   renderHistory() {
     const text = this.getText();
-    const tasks = this.getTasks()
-      .map(task => ({ task, entries: historyEntries([task]) }))
-      .sort((a, b) => {
-        const lastA = a.entries[0]?.iso || 0;
-        const lastB = b.entries[0]?.iso || 0;
-        return new Date(lastB) - new Date(lastA);
-      });
-    const groups = tasks.map(task => {
-      const rows = task.entries;
-      const meta = taskMetaItems(task.task, text, this.getLang(), DAY_NAMES[this.getLang()])
-        .map(item => `<span class="meta-line">${escapeHtml(item)}</span>`)
-        .join('');
-      return `
-        <section class="historyGroup">
-          <h3>${escapeHtml(`${task.task.emoji ? `${task.task.emoji} ` : ''}${task.task.title}`)}</h3>
-          <div class="meta">${meta || text.noHistory}</div>
-          <div class="historyRows">${
-            rows.length
-              ? rows.map(entry => `
-                <div class="historyRow">
-                  <div class="historyEvent">
-                    <span class="historyEventIcon">${entry.type === 'skip' ? '↷' : '✓'}</span>
-                    <span>${escapeHtml(new Date(entry.iso).toLocaleString(this.getLang() === 'en' ? 'en-GB' : 'de-CH', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    }))}</span>
-                  </div>
-                  <button class="historyDelete" data-history-delete="1" data-task-id="${task.task.id}" data-iso="${encodeURIComponent(entry.iso)}">&times;</button>
-                </div>
-              `).join('')
-              : `<div class="empty">${text.noHistory}</div>`
-          }</div>
-        </section>
-      `;
-    }).join('');
-    $('pastList').innerHTML = groups || `<div class="empty">${text.noHistory}</div>`;
+    const entries = historyEntries(this.getTasks());
+    const visible = entries.slice(0, this.historyShown);
+    if (!entries.length) {
+      $('pastList').innerHTML = `<div class="empty">${text.noHistory}</div>`;
+      return;
+    }
+
+    $('pastList').innerHTML = `
+      <section class="historyGroup">
+        <div class="historyRows">${
+          visible.map(entry => `
+            <div class="historyRow" data-history-edit="1" data-task-id="${entry.task.id}" data-iso="${encodeURIComponent(entry.iso)}">
+              <div class="historyEvent">
+                <span class="historyEventIcon">${entry.type === 'skip' ? '↷' : '✓'}</span>
+                <span>
+                  <strong>${escapeHtml(`${entry.task.emoji ? `${entry.task.emoji} ` : ''}${entry.task.title}`)}</strong>
+                  <span class="historyDateText">${escapeHtml(new Date(entry.iso).toLocaleString(this.getLang() === 'en' ? 'en-GB' : 'de-CH', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }))}</span>
+                </span>
+              </div>
+              <button class="historyDelete" data-history-delete="1" data-task-id="${entry.task.id}" data-iso="${encodeURIComponent(entry.iso)}">&times;</button>
+            </div>
+          `).join('')
+        }</div>
+        ${
+          entries.length > this.historyShown
+            ? `<button class="historyMore" type="button" data-history-more="global" aria-label="${text.moreHistory}">⌄</button>`
+            : ''
+        }
+      </section>
+    `;
   }
 }

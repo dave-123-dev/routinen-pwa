@@ -55,7 +55,7 @@ export function renderTaskCard(task, text, lang) {
   `;
 }
 
-export function renderPastTaskCard(entry, lang) {
+export function renderPastTaskCard(entry, lang, text) {
   const date = new Date(entry.iso);
   const when = Number.isNaN(date.getTime())
     ? ''
@@ -74,6 +74,7 @@ export function renderPastTaskCard(entry, lang) {
         <div class="pastTitle"><span class="pastEventIcon">${entry.type === 'skip' ? '↷' : '✓'}</span>${escapeHtml(entry.task.title)}</div>
         <div class="pastDate">${escapeHtml(when)}</div>
       </div>
+      <button class="pastEdit" type="button" data-history-edit="1" data-task-id="${entry.task.id}" data-iso="${encodeURIComponent(entry.iso)}" aria-label="${text.editHistory}">✎</button>
       <button class="pastReload" type="button" data-replay-id="${entry.task.id}" aria-label="Als neue Aufgabe übernehmen">↻</button>
     </article>
   `;

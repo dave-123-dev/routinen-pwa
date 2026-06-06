@@ -1,7 +1,7 @@
 import { APP_VERSION } from './version.js';
 import { initPullRefresh } from './pull-refresh.js';
 import { initReminderNotifications } from './notifications.js';
-import { completeTask, computeNextExecution, isTaskLike, normalizeTask, removeHistoryEntry, skipTask, taskState } from './domain/tasks.js';
+import { completeTask, computeNextExecution, isTaskLike, latestHistoryEntry, normalizeTask, removeHistoryEntry, skipTask, taskState, updateHistoryEntry } from './domain/tasks.js';
 import { messagesFor, normalizeLanguage } from './i18n/messages.js';
 import {
   loadLanguage,
@@ -14,7 +14,7 @@ import {
   saveUiState,
 } from './storage/task-store.js';
 import { localDate } from './domain/dates.js';
-import { $, toast } from './ui/dom.js';
+import { $, hidePanel, showPanel, toast } from './ui/dom.js';
 import { TaskListView } from './views/task-list-view.js';
 import { TaskFormView } from './views/task-form-view.js';
 import { HistoryView } from './views/history-view.js';
@@ -31,6 +31,8 @@ let settings = {
 
 const text = () => messagesFor(lang);
 const findTask = id => tasks.find(task => String(task.id) === String(id));
+let editingHistory = null;
+let bannerTimer = null;
 
 function normalizeImportedTasks(rawTasks) {
   return rawTasks
@@ -73,10 +75,75 @@ function applyLanguage() {
   $('importBtn').setAttribute('aria-label', t.import);
   $('settingsBtn').title = t.settings;
   $('settingsBtn').setAttribute('aria-label', t.settings);
+  $('historyEditTitle').textContent = t.editHistory;
+  $('historyEditDateLabel').textContent = t.historyDate;
+  $('historyEditTimeLabel').textContent = t.historyTime;
+  $('historyEditCancel').textContent = t.cancel;
+  $('historyEditSave').textContent = t.save;
   taskFormView.applyLanguage();
   importView.applyLanguage();
   settingsView.applyLanguage();
   render();
+}
+
+function localHistoryParts(iso) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return { date: localDate(), time: '00:00' };
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString();
+  return {
+    date: local.slice(0, 10),
+    time: local.slice(11, 16),
+  };
+}
+
+function openHistoryEdit(taskId, iso) {
+  const task = findTask(taskId);
+  const entry = task ? latestHistoryEntry({ ...task, history: task.history.filter(item => item.iso === iso || item === iso) }) : null;
+  if (!task || !iso) return;
+  const parts = localHistoryParts(iso);
+  editingHistory = { taskId, iso, type: entry?.type || 'done' };
+  $('historyEditDate').value = parts.date;
+  $('historyEditTime').value = parts.time;
+  showPanel('historyEditPanel');
+}
+
+function saveHistoryEdit() {
+  if (!editingHistory) return;
+  const date = $('historyEditDate').value;
+  const time = $('historyEditTime').value || '00:00';
+  const next = new Date(`${date}T${time}`);
+  if (!date || Number.isNaN(next.getTime())) {
+    toast(text().importError);
+    return;
+  }
+  const nextIso = next.toISOString();
+  tasks = tasks.map(task => (
+    String(task.id) === String(editingHistory.taskId)
+      ? updateHistoryEntry(task, editingHistory.iso, nextIso)
+      : task
+  ));
+  persistTasks();
+  hidePanel('historyEditPanel');
+  editingHistory = null;
+  render();
+  if ($('history').classList.contains('show')) historyView.refresh();
+}
+
+function showHistoryEditBanner(sourceButton, taskId, iso) {
+  const old = document.querySelector('.historyEditBanner');
+  if (old) old.remove();
+  if (bannerTimer) clearTimeout(bannerTimer);
+
+  const banner = document.createElement('button');
+  banner.type = 'button';
+  banner.className = 'historyEditBanner';
+  banner.textContent = text().editHistoryHint;
+  banner.onclick = () => {
+    banner.remove();
+    openHistoryEdit(taskId, iso);
+  };
+  document.body.appendChild(banner);
+  bannerTimer = setTimeout(() => banner.remove(), 5000);
 }
 
 function focusTaskInCurrentList(id) {
@@ -133,10 +200,17 @@ function deleteHistoryEntry(taskId, iso, options = {}) {
   toast(text().deleteHistory);
 }
 
-function complete(id) {
-  tasks = tasks.map(task => (String(task.id) === String(id) ? completeTask(task) : task));
+function complete(id, sourceButton) {
+  let newEntry = null;
+  tasks = tasks.map(task => {
+    if (String(task.id) !== String(id)) return task;
+    const next = completeTask(task);
+    newEntry = latestHistoryEntry(next);
+    return next;
+  });
   persistTasks();
   render();
+  if (newEntry) showHistoryEditBanner(sourceButton, id, newEntry.iso);
 }
 
 function skip(id) {
@@ -218,6 +292,7 @@ const historyView = new HistoryView({
   getText: text,
   getLang: () => lang,
   onDeleteEntry: deleteHistoryEntry,
+  onEditEntry: openHistoryEdit,
 });
 
 const importView = new ImportView({
@@ -239,6 +314,7 @@ const pastView = new PastView({
   onReplay: task => taskFormView.openFromTask(task),
   onOpenHistory: id => historyView.openTask(id),
   onDeleteHistory: deleteHistoryEntry,
+  onEditHistory: openHistoryEdit,
 });
 
 function bind() {
@@ -248,6 +324,8 @@ function bind() {
   importView.bind();
   settingsView.bind();
   pastView.bind();
+  $('historyEditCancel').onclick = () => hidePanel('historyEditPanel');
+  $('historyEditSave').onclick = saveHistoryEdit;
   $('exportBtn').onclick = exportJSON;
   document.addEventListener('click', () => saveUiState({
     tab: pastView.tab,
