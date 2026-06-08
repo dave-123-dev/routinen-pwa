@@ -8,12 +8,13 @@ const modeToRule = mode => (mode === 'weekdays' ? TASK_RULES.WEEKDAY : mode);
 const ruleToMode = rule => (rule === TASK_RULES.WEEKDAY ? 'weekdays' : rule || TASK_RULES.DATE);
 
 export class TaskFormView {
-  constructor({ getText, getLang, findTask, onSave, onDelete }) {
+  constructor({ getText, getLang, findTask, onSave, onDelete, onArchive }) {
     this.getText = getText;
     this.getLang = getLang;
     this.findTask = findTask;
     this.onSave = onSave;
     this.onDelete = onDelete;
+    this.onArchive = onArchive;
     this.editId = null;
     this.mode = TASK_RULES.DATE;
     this.selectedDays = [];
@@ -27,6 +28,10 @@ export class TaskFormView {
     $('saveBtn').onclick = () => this.save();
     $('deleteBtn').onclick = () => {
       this.onDelete(this.editId);
+      hidePanel('form');
+    };
+    $('archiveBtn').onclick = () => {
+      this.onArchive(this.editId);
       hidePanel('form');
     };
     $('days').onclick = event => {
@@ -77,6 +82,7 @@ export class TaskFormView {
     $('detailsLabel').textContent = text.details;
     $('cancel').textContent = text.cancel;
     $('saveBtn').textContent = text.save;
+    $('archiveBtn').textContent = text.archive;
     $('deleteBtn').textContent = text.delete;
     $('unitMinutes').textContent = text.minutes;
     $('unitHours').textContent = text.hours;
@@ -107,6 +113,7 @@ export class TaskFormView {
     $('intervalStartDate').value = localDate();
     $('intervalStartTime').value = localTime();
     $('intervalAnchorMode').value = INTERVAL_ANCHOR_MODES.LAST_DONE;
+    $('archiveBtn').style.display = 'none';
     $('deleteBtn').style.display = 'none';
     this.drawDays();
     this.updateReminderUi();
@@ -138,6 +145,7 @@ export class TaskFormView {
     $('intervalStartDate').value = task.intervalStartDate || localDate();
     $('intervalStartTime').value = task.intervalStartTime || localTime();
     $('intervalAnchorMode').value = task.intervalAnchorMode || INTERVAL_ANCHOR_MODES.LAST_DONE;
+    $('archiveBtn').style.display = task.archivedAt ? 'none' : 'block';
     $('deleteBtn').style.display = 'block';
     this.drawDays();
     this.updateReminderUi();

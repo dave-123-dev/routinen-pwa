@@ -32,6 +32,7 @@ export const REMINDER_MODES = {
 export const HISTORY_TYPES = {
   DONE: 'done',
   SKIP: 'skip',
+  ARCHIVE: 'archive',
 };
 
 export const TASK_GROUPS = ['overdue', 'today', 'tomorrow', 'week', 'nextweek', 'later', 'open'];
@@ -49,7 +50,9 @@ function normalizeHistoryEntry(entry) {
   if (!iso) return null;
   return {
     iso,
-    type: entry.type === HISTORY_TYPES.SKIP ? HISTORY_TYPES.SKIP : HISTORY_TYPES.DONE,
+    type: [HISTORY_TYPES.SKIP, HISTORY_TYPES.ARCHIVE].includes(entry.type)
+      ? entry.type
+      : HISTORY_TYPES.DONE,
   };
 }
 
@@ -170,6 +173,7 @@ export function normalizeTask(raw = {}) {
   }
   task.completed = task.ruleType === TASK_RULES.DATE && Boolean(task.completed);
   task.completedAt = task.completedAt || null;
+  task.archivedAt = task.archivedAt || null;
   task.lastDone = task.lastDone || null;
   task.lastDoneDay = task.lastDoneDay || ((task.lastDone || task.completedAt || '').slice(0, 10) || null);
   task.history = Array.isArray(task.history)
@@ -196,6 +200,10 @@ export function isDateTaskDone(task) {
   return task.ruleType === TASK_RULES.DATE && task.completed;
 }
 
+export function isArchivedTask(task) {
+  return Boolean(task.archivedAt);
+}
+
 export function isDisabledToday(task, today = localDate()) {
   return task.ruleType === TASK_RULES.WEEKDAY
     && !task.allowMultiplePerDay
@@ -203,6 +211,7 @@ export function isDisabledToday(task, today = localDate()) {
 }
 
 export function taskState(task, text, now = new Date()) {
+  if (isArchivedTask(task)) return { key: 'archived', label: text.archived, rank: 10 };
   if (isDateTaskDone(task)) return { key: 'done', label: text.done, rank: 9 };
 
   const next = parseDateTime(task.nextExecution);
@@ -252,6 +261,14 @@ export function completeTask(task, now = new Date()) {
 
 export function latestHistoryEntry(task) {
   return historyEntries([task])[0] || null;
+}
+
+export function archiveTask(task, now = new Date()) {
+  if (task.archivedAt) return normalizeTask(task);
+  return normalizeTask({
+    ...task,
+    archivedAt: now.toISOString(),
+  });
 }
 
 export function skipTask(task, now = new Date()) {
@@ -323,6 +340,9 @@ export function historyEntries(tasks) {
     if (task.completedAt && !entries.some(entry => entry.iso === task.completedAt && String(entry.task.id) === String(task.id))) {
       entries.push({ iso: task.completedAt, type: HISTORY_TYPES.DONE, task });
     }
+    if (task.archivedAt && !entries.some(entry => entry.iso === task.archivedAt && String(entry.task.id) === String(task.id))) {
+      entries.push({ iso: task.archivedAt, type: HISTORY_TYPES.ARCHIVE, task });
+    }
   });
   return entries.sort((a, b) => new Date(b.iso) - new Date(a.iso));
 }
@@ -339,6 +359,14 @@ export function removeHistoryEntry(task, iso) {
       history,
       completed: false,
       completedAt: null,
+    });
+  }
+
+  if (task.archivedAt === iso) {
+    return normalizeTask({
+      ...task,
+      history,
+      archivedAt: null,
     });
   }
 
@@ -366,6 +394,10 @@ export function updateHistoryEntry(task, oldIso, nextIso) {
 
   if (task.ruleType === TASK_RULES.DATE && task.completedAt === oldIso) {
     updates.completedAt = nextIso;
+  }
+
+  if (task.archivedAt === oldIso) {
+    updates.archivedAt = nextIso;
   }
 
   return normalizeTask(updates);

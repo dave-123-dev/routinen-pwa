@@ -7,9 +7,9 @@
   <meta name="theme-color" content="#0f131b" media="(prefers-color-scheme:dark)">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icons/icon.svg">
-  <link rel="stylesheet" href="./styles/app.css">
-  <link rel="stylesheet" href="./styles/task-buttons.css">
-  <link rel="stylesheet" href="./styles/modular.css">
+  <link rel="stylesheet" href="./styles/app.css?v=42">
+  <link rel="stylesheet" href="./styles/task-buttons.css?v=42">
+  <link rel="stylesheet" href="./styles/modular.css?v=42">
   <title>Meine Routinen</title>
 </head>
 <body>
@@ -33,7 +33,7 @@
   <main id="list" class="list"></main>
   <button id="fab" aria-label="Neue Aufgabe">+</button>
   <div id="toast" class="toast"></div>
-  <div id="version" class="version">v41</div>
+  <div id="version" class="version">v42</div>
 
   <section id="form" class="panel">
     <div class="grab"></div>
@@ -133,6 +133,7 @@
       <button id="cancel" class="btn cancel">Abbrechen</button>
       <button id="saveBtn" class="btn save">Speichern</button>
     </div>
+    <button id="archiveBtn" class="btn archive" style="display:none">Archivieren</button>
     <button id="deleteBtn" class="btn danger" style="display:none">Löschen</button>
   </section>
 
@@ -204,6 +205,6 @@
     <div id="histBody" class="fb"></div>
   </section>
 
-  <script type="module" src="./src/app.js"></script>
+  <script type="module" src="./src/app.js?v=42"></script>
 </body>
 </html>

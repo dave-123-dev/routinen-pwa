@@ -6,6 +6,7 @@ const PAGE_SIZE = 20;
 const INITIAL_HISTORY_LIMIT = 2;
 const HISTORY_STEP = 5;
 const VALID_TABS = ['current', 'past', 'history'];
+const eventIcon = type => (type === 'archive' ? '&#128451;' : (type === 'skip' ? '↷' : '✓'));
 
 export class PastView {
   constructor({ getTasks, getText, getLang, onReplay, onOpenHistory, onDeleteHistory, onEditHistory }) {
@@ -208,7 +209,7 @@ export class PastView {
           visible.map(entry => `
             <div class="historyRow" data-history-edit="1" data-task-id="${entry.task.id}" data-iso="${encodeURIComponent(entry.iso)}">
               <div class="historyEvent">
-                <span class="historyEventIcon">${entry.type === 'skip' ? '↷' : '✓'}</span>
+                <span class="historyEventIcon">${eventIcon(entry.type)}</span>
                 <span>
                   <strong>${escapeHtml(`${entry.task.emoji ? `${entry.task.emoji} ` : ''}${entry.task.title}`)}</strong>
                   <span class="historyDateText">${escapeHtml(new Date(entry.iso).toLocaleString(this.getLang() === 'en' ? 'en-GB' : 'de-CH', {

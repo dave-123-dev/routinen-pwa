@@ -15,6 +15,12 @@ function compactDeadlineText(task, lang) {
   return formatDateTime(task.endDateTime || task.targetDate, lang);
 }
 
+function eventIcon(type) {
+  if (type === 'archive') return '&#128451;';
+  if (type === 'skip') return '↷';
+  return '✓';
+}
+
 export function renderTaskCard(task, text, lang) {
   const state = taskState(task, text);
   const done = isDateTaskDone(task);
@@ -33,7 +39,8 @@ export function renderTaskCard(task, text, lang) {
           <div class="titleRow">
             <h3 class="taskTitle">${escapeHtml(task.title)}</h3>
             <div class="taskIconActions">
-              <button class="edit" data-edit="${task.id}" aria-label="${text.editTask}">${done ? '↻' : '✎'}</button>
+              <button class="edit" data-history="${task.id}" aria-label="${text.history}">&#8635;</button>
+              <button class="edit archiveIcon" data-archive="${task.id}" aria-label="${text.archive}">&#128451;</button>
               <button class="edit skipIcon" data-skip="${task.id}" aria-label="${text.skip}" ${disabled ? 'disabled' : ''}>↷</button>
             </div>
           </div>
@@ -41,7 +48,8 @@ export function renderTaskCard(task, text, lang) {
           <div class="meta">${metaHtml(task, text, lang)}</div>
           <div class="status">${state.label}</div>
           <div class="compactActions">
-            <button class="compactAction" data-edit="${task.id}" aria-label="${text.editTask}">✎</button>
+            <button class="compactAction" data-history="${task.id}" aria-label="${text.history}">&#8635;</button>
+            <button class="compactAction archiveIcon" data-archive="${task.id}" aria-label="${text.archive}">&#128451;</button>
             <button class="compactAction skipIcon" data-skip="${task.id}" aria-label="${text.skip}" ${disabled ? 'disabled' : ''}>↷</button>
             <button class="compactAction" data-check="${task.id}" aria-label="${label}" ${disabled ? 'disabled' : ''}>✓</button>
           </div>
@@ -69,9 +77,9 @@ export function renderPastTaskCard(entry, lang, text) {
 
   return `
     <article class="pastItem" data-task-id="${entry.task.id}">
-      <div class="pastEmoji">${escapeHtml(entry.task.emoji || (entry.type === 'skip' ? '↷' : '✓'))}</div>
+      <div class="pastEmoji">${escapeHtml(entry.task.emoji || '') || eventIcon(entry.type)}</div>
       <div>
-        <div class="pastTitle"><span class="pastEventIcon">${entry.type === 'skip' ? '↷' : '✓'}</span>${escapeHtml(entry.task.title)}</div>
+        <div class="pastTitle"><span class="pastEventIcon">${eventIcon(entry.type)}</span>${escapeHtml(entry.task.title)}</div>
         <div class="pastDate">${escapeHtml(when)}</div>
       </div>
       <button class="pastEdit" type="button" data-history-edit="1" data-task-id="${entry.task.id}" data-iso="${encodeURIComponent(entry.iso)}" aria-label="${text.editHistory}">✎</button>

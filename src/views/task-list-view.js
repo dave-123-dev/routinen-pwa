@@ -13,13 +13,14 @@ const groupLabel = (group, text) => ({
 }[group] || group);
 
 export class TaskListView {
-  constructor({ getTasks, getText, getLang, onComplete, onSkip, onDelete, onEdit, onOpenHistory }) {
+  constructor({ getTasks, getText, getLang, onComplete, onSkip, onDelete, onArchive, onEdit, onOpenHistory }) {
     this.getTasks = getTasks;
     this.getText = getText;
     this.getLang = getLang;
     this.onComplete = onComplete;
     this.onSkip = onSkip;
     this.onDelete = onDelete;
+    this.onArchive = onArchive;
     this.onEdit = onEdit;
     this.onOpenHistory = onOpenHistory;
   }
@@ -35,11 +36,14 @@ export class TaskListView {
       button = event.target.closest('[data-skip]');
       if (button) return this.onSkip(button.dataset.skip);
 
-      button = event.target.closest('[data-edit]');
-      if (button) return this.onEdit(button.dataset.edit);
+      button = event.target.closest('[data-archive]');
+      if (button) return this.onArchive(button.dataset.archive);
+
+      button = event.target.closest('[data-history]');
+      if (button) return this.onOpenHistory(button.dataset.history);
 
       const card = event.target.closest('.card');
-      if (card && !event.target.closest('button')) this.onOpenHistory(card.dataset.id);
+      if (card && !event.target.closest('button')) this.onEdit(card.dataset.id);
     });
   }
 
@@ -56,7 +60,7 @@ export class TaskListView {
     badge.style.display = due ? 'block' : 'none';
     badge.textContent = `${due} ${text.today}`;
 
-    const visibleTasks = sorted.filter(task => taskState(task, text).key !== 'done');
+    const visibleTasks = sorted.filter(task => !['done', 'archived'].includes(taskState(task, text).key));
 
     if (!visibleTasks.length) {
       $('list').innerHTML = `<div class="empty">${text.empty}</div>`;

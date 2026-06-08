@@ -1,7 +1,7 @@
 import { APP_VERSION } from './version.js';
 import { initPullRefresh } from './pull-refresh.js';
 import { initReminderNotifications } from './notifications.js';
-import { completeTask, computeNextExecution, isTaskLike, latestHistoryEntry, normalizeTask, removeHistoryEntry, skipTask, taskState, updateHistoryEntry } from './domain/tasks.js';
+import { archiveTask, completeTask, computeNextExecution, isTaskLike, latestHistoryEntry, normalizeTask, removeHistoryEntry, skipTask, taskState, updateHistoryEntry } from './domain/tasks.js';
 import { messagesFor, normalizeLanguage } from './i18n/messages.js';
 import {
   loadLanguage,
@@ -162,6 +162,7 @@ function saveTask(editId, data) {
     id: editId || Date.now(),
     completed: old?.completed || false,
     completedAt: old?.completedAt || null,
+    archivedAt: old?.archivedAt || null,
     history: old?.history || [],
     nextExecution: '',
   });
@@ -185,6 +186,14 @@ function deleteTask(id) {
   persistTasks();
   render();
   toast(text().deleted);
+}
+
+function archive(id) {
+  if (!window.confirm(text().confirmArchiveTask)) return;
+  tasks = tasks.map(task => (String(task.id) === String(id) ? archiveTask(task) : task));
+  persistTasks();
+  render();
+  toast(text().archivedToast);
 }
 
 function deleteHistoryEntry(taskId, iso, options = {}) {
@@ -275,6 +284,7 @@ const taskListView = new TaskListView({
   onComplete: complete,
   onSkip: skip,
   onDelete: deleteTask,
+  onArchive: archive,
   onEdit: id => taskFormView.openEdit(id),
   onOpenHistory: id => historyView.openTask(id),
 });
@@ -285,6 +295,7 @@ const taskFormView = new TaskFormView({
   findTask,
   onSave: saveTask,
   onDelete: deleteTask,
+  onArchive: archive,
 });
 
 const historyView = new HistoryView({

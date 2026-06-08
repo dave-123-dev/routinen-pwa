@@ -5,6 +5,7 @@ import { $, escapeHtml } from '../ui/dom.js';
 
 const INITIAL_HISTORY_LIMIT = 2;
 const HISTORY_STEP = 5;
+const eventIcon = type => (type === 'archive' ? '&#128451;' : (type === 'skip' ? '↷' : '✓'));
 
 export class HistoryView {
   constructor({ getTasks, getText, getLang, onDeleteEntry, onEditEntry }) {
@@ -56,7 +57,7 @@ export class HistoryView {
     const limit = this.expanded.get(key) || INITIAL_HISTORY_LIMIT;
     const visible = entries.slice(0, limit).map(entry => `
       <div class="hist">
-        <span class="histIcon">${entry.type === 'skip' ? '↷' : '✓'}</span>
+        <span class="histIcon">${eventIcon(entry.type)}</span>
         <button class="histEdit" type="button" data-history-edit="1" data-task-id="${task.id}" data-iso="${encodeURIComponent(entry.iso)}" aria-label="${text.editHistory}">✎</button>
         <button class="histDel" data-history-delete="1" data-task-id="${task.id}" data-iso="${encodeURIComponent(entry.iso)}">&times;</button>
         ${escapeHtml(formatDateTime(entry.iso, this.getLang()))}
@@ -91,7 +92,7 @@ export class HistoryView {
     $('histBody').innerHTML = visible.length
       ? visible.map(entry => `
         <div class="hist">
-          <span class="histIcon">${entry.type === 'skip' ? '↷' : '✓'}</span>
+          <span class="histIcon">${eventIcon(entry.type)}</span>
           <button class="histEdit" type="button" data-history-edit="1" data-task-id="${entry.task.id}" data-iso="${encodeURIComponent(entry.iso)}" aria-label="${text.editHistory}">✎</button>
           <button class="histDel" data-history-delete="1" data-task-id="${entry.task.id}" data-iso="${encodeURIComponent(entry.iso)}">&times;</button>
           <strong>${escapeHtml(`${entry.task.emoji ? `${entry.task.emoji} ` : ''}${entry.task.title}`)}</strong><br>
