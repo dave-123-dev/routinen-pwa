@@ -230,6 +230,11 @@ body{
   color:var(--text)
 }
 
+.archiveIcon,
+[data-history]{
+  color:var(--muted)
+}
+
 .skipIcon:disabled{
   opacity:.45
 }

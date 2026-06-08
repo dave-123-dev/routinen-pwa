@@ -5,7 +5,7 @@ import { $, escapeHtml } from '../ui/dom.js';
 
 const INITIAL_HISTORY_LIMIT = 20;
 const HISTORY_STEP = 10;
-const eventIcon = type => (type === 'archive' ? '&#128230;' : (type === 'skip' ? '↷' : '✓'));
+const eventIcon = type => (type === 'archive' ? '&#9636;' : (type === 'skip' ? '↷' : '✓'));
 
 export class HistoryView {
   constructor({ getTasks, getText, getLang, onDeleteEntry, onEditEntry }) {

@@ -6,7 +6,7 @@ const PAGE_SIZE = 20;
 const INITIAL_HISTORY_LIMIT = 20;
 const HISTORY_STEP = 10;
 const VALID_TABS = ['current', 'past', 'history'];
-const eventIcon = type => (type === 'archive' ? '&#128230;' : (type === 'skip' ? '↷' : '✓'));
+const eventIcon = type => (type === 'archive' ? '&#9636;' : (type === 'skip' ? '↷' : '✓'));
 
 export class PastView {
   constructor({ getTasks, getText, getLang, onReplay, onOpenHistory, onDeleteHistory, onEditHistory }) {
