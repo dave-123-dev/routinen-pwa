@@ -16,7 +16,7 @@ function compactDeadlineText(task, lang) {
 }
 
 function eventIcon(type) {
-  if (type === 'archive') return '&#128451;';
+  if (type === 'archive') return '&#128230;';
   if (type === 'skip') return '↷';
   return '✓';
 }
@@ -39,8 +39,8 @@ export function renderTaskCard(task, text, lang) {
           <div class="titleRow">
             <h3 class="taskTitle">${escapeHtml(task.title)}</h3>
             <div class="taskIconActions">
-              <button class="edit" data-history="${task.id}" aria-label="${text.history}">&#8635;</button>
-              <button class="edit archiveIcon" data-archive="${task.id}" aria-label="${text.archive}">&#128451;</button>
+              <button class="edit" data-history="${task.id}" aria-label="${text.history}">&#9776;</button>
+              <button class="edit archiveIcon" data-archive="${task.id}" aria-label="${text.archive}">&#128230;</button>
               <button class="edit skipIcon" data-skip="${task.id}" aria-label="${text.skip}" ${disabled ? 'disabled' : ''}>↷</button>
             </div>
           </div>
@@ -48,8 +48,8 @@ export function renderTaskCard(task, text, lang) {
           <div class="meta">${metaHtml(task, text, lang)}</div>
           <div class="status">${state.label}</div>
           <div class="compactActions">
-            <button class="compactAction" data-history="${task.id}" aria-label="${text.history}">&#8635;</button>
-            <button class="compactAction archiveIcon" data-archive="${task.id}" aria-label="${text.archive}">&#128451;</button>
+            <button class="compactAction" data-history="${task.id}" aria-label="${text.history}">&#9776;</button>
+            <button class="compactAction archiveIcon" data-archive="${task.id}" aria-label="${text.archive}">&#128230;</button>
             <button class="compactAction skipIcon" data-skip="${task.id}" aria-label="${text.skip}" ${disabled ? 'disabled' : ''}>↷</button>
             <button class="compactAction" data-check="${task.id}" aria-label="${label}" ${disabled ? 'disabled' : ''}>✓</button>
           </div>

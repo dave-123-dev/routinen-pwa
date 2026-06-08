@@ -3,9 +3,9 @@ import { historyEntries, taskMetaItems } from '../domain/tasks.js';
 import { DAY_NAMES } from '../i18n/messages.js';
 import { $, escapeHtml } from '../ui/dom.js';
 
-const INITIAL_HISTORY_LIMIT = 2;
-const HISTORY_STEP = 5;
-const eventIcon = type => (type === 'archive' ? '&#128451;' : (type === 'skip' ? '↷' : '✓'));
+const INITIAL_HISTORY_LIMIT = 20;
+const HISTORY_STEP = 10;
+const eventIcon = type => (type === 'archive' ? '&#128230;' : (type === 'skip' ? '↷' : '✓'));
 
 export class HistoryView {
   constructor({ getTasks, getText, getLang, onDeleteEntry, onEditEntry }) {

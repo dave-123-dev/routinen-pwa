@@ -462,6 +462,19 @@ label{
   font-weight:800
 }
 
+.dangerActions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:10px
+}
+
+.dangerActions .archive,
+.dangerActions .danger{
+  width:100%;
+  margin-top:0
+}
+
 .cancel{background:var(--soft);color:var(--muted)}
 .save{background:var(--text);color:var(--bg)}
 .archive{background:var(--soft);color:var(--text);width:100%;margin-top:10px;border:1px solid var(--line)}

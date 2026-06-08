@@ -3,10 +3,10 @@ import { $, escapeHtml } from '../ui/dom.js';
 import { renderPastTaskCard } from '../ui/task-card.js';
 
 const PAGE_SIZE = 20;
-const INITIAL_HISTORY_LIMIT = 2;
-const HISTORY_STEP = 5;
+const INITIAL_HISTORY_LIMIT = 20;
+const HISTORY_STEP = 10;
 const VALID_TABS = ['current', 'past', 'history'];
-const eventIcon = type => (type === 'archive' ? '&#128451;' : (type === 'skip' ? '↷' : '✓'));
+const eventIcon = type => (type === 'archive' ? '&#128230;' : (type === 'skip' ? '↷' : '✓'));
 
 export class PastView {
   constructor({ getTasks, getText, getLang, onReplay, onOpenHistory, onDeleteHistory, onEditHistory }) {
@@ -122,7 +122,7 @@ export class PastView {
       const tabs = document.createElement('div');
       tabs.id = 'viewTabs';
       tabs.className = 'viewTabs';
-      tabs.innerHTML = '<div class="viewTabGroup"><button data-tab="current"></button><button data-tab="past"></button><button data-tab="history" class="historyTab" type="button" aria-label="Verlauf">&#8635;</button></div><button id="compactToggle" class="compactToggle" type="button"></button>';
+      tabs.innerHTML = '<div class="viewTabGroup"><button data-tab="current"></button><button data-tab="past"></button><button data-tab="history" class="historyTab" type="button" aria-label="Verlauf">&#9776;</button></div><button id="compactToggle" class="compactToggle" type="button"></button>';
       $('list').parentNode.insertBefore(tabs, $('list'));
     }
 
